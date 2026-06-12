@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESB Command — Easy Street Buyers</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0c1220;--card:#141d31;--line:#1f2c47;--text:#e8eefb;--dim:#8294b5;--cyan:#22d3ee;--green:#34d399;--red:#f87171;--amber:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,'Segoe UI',Inter,sans-serif;padding:22px 28px}
+.hdr{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:21px;letter-spacing:.4px}
+.logo .house{width:34px;height:34px;background:var(--cyan);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#04222b;font-size:19px}
+.logo small{display:block;font-size:10px;font-weight:600;color:var(--dim);letter-spacing:2.5px}
+.spacer{flex:1}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 15px;cursor:pointer;color:var(--dim);font-size:13px;font-weight:600}
+.chip.on{background:var(--cyan);color:#04222b;border-color:var(--cyan)}
+.dates{display:flex;gap:6px;align-items:center}
+input[type=date]{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 8px;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kpi .lbl{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+.kpi .val{font-size:30px;font-weight:800;margin-top:3px}
+.kpi .sub{font-size:12px;color:var(--dim);margin-top:2px}
+.kpi .sub b.up{color:var(--green)}.kpi .sub b.dn{color:var(--red)}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card h3{font-size:12px;color:var(--dim);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:12px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{color:var(--dim);text-align:right;font-weight:600;padding:5px 8px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.8px}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+.funnelbar{display:flex;align-items:flex-end;gap:10px;height:170px;padding-top:8px}
+.fstage{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;height:100%}
+.fbar{width:100%;background:linear-gradient(180deg,#22d3ee,#0e7490);border-radius:8px 8px 3px 3px;min-height:4px}
+.fnum{font-weight:800;font-size:17px}
+.flbl{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
+.fcv{font-size:10.5px;color:var(--amber);font-weight:700}
+.convsel{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+select{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px}
+.bigpct{font-size:46px;font-weight:800;color:var(--cyan)}
+.pace{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+.pace i{display:block;height:100%;background:var(--green);border-radius:99px}
+.muted{color:var(--dim);font-size:12.5px}
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:50}
+#login input{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 16px;font-size:16px;width:260px;text-align:center}
+#login button{background:var(--cyan);color:#04222b;border:none;border-radius:10px;padding:12px 30px;font-size:15px;font-weight:700;cursor:pointer}
+.foot{color:var(--dim);font-size:11.5px;margin-top:10px;text-align:right}
+canvas{max-height:230px}
+@media(max-width:1000px){.grid,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="login">
+  <div class="logo"><div class="house">⌂</div><div>EASY STREET BUYERS<small>COMMAND CENTER</small></div></div>
+  <input id="pw" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')go()">
+  <button onclick="go()">Enter</button>
+  <div id="loginerr" style="color:var(--red);font-size:13px"></div>
+</div>
+
+<div id="app" style="display:none">
+<div class="hdr">
+  <div class="logo"><div class="house">⌂</div><div>EASY STREET BUYERS<small>COMMAND CENTER</small></div></div>
+  <div class="spacer"></div>
+  <div class="chips" id="presets">
+    <div class="chip" data-p="today">Today</div>
+    <div class="chip" data-p="wtd">This Week</div>
+    <div class="chip on" data-p="mtd">This Month</div>
+    <div class="chip" data-p="30">Last 30</div>
+    <div class="chip" data-p="qtd">Quarter</div>
+    <div class="chip" data-p="ytd">YTD</div>
+  </div>
+  <div class="dates">
+    <input type="date" id="d1"><span class="muted">to</span><input type="date" id="d2">
+    <div class="chip" onclick="customRange()">Go</div>
+  </div>
+</div>
+
+<div class="chips" id="channels" style="margin-bottom:16px">
+  <div class="chip on" data-c="All">All Channels</div>
+  <div class="chip" data-c="Direct Mail">Direct Mail</div>
+  <div class="chip" data-c="PPC">PPC</div>
+  <div class="chip" data-c="Property Leads">Property Leads</div>
+  <div class="chip" data-c="Probate/LP">Probate/LP</div>
+  <div class="chip" data-c="Website">Website</div>
+  <div class="chip" data-c="Other">Other</div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="grid">
+  <div class="card"><h3>The Funnel</h3><div class="funnelbar" id="funnel"></div></div>
+  <div class="card"><h3>Any-Stage Conversion</h3>
+    <div class="convsel">
+      <select id="cvFrom"></select><span class="muted">→</span><select id="cvTo"></select>
+    </div>
+    <div class="bigpct" id="cvPct">—</div>
+    <div class="muted" id="cvDetail"></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card"><h3>Weekly Trend</h3><canvas id="trend"></canvas></div>
+  <div class="card"><h3>$1M Pace</h3>
+    <div style="font-size:26px;font-weight:800" id="paceRev"></div>
+    <div class="muted" id="paceDetail"></div>
+    <div class="pace"><i id="paceBar" style="width:0%"></i></div>
+    <div style="margin-top:16px;font-size:26px;font-weight:800" id="paceDeals"></div>
+    <div class="muted">closings this month · target 5–6</div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card"><h3>By Channel</h3><table id="chTable"></table></div>
+  <div class="card"><h3>⚠ Unmatched Appointments (fix in SF)</h3><div id="unmatched" class="muted"></div></div>
+</div>
+<div class="foot" id="foot"></div>
+</div>
+
+<script>
+const STAGES=[["gross","Gross"],["net","Net"],["appt_set","Appt Set"],["appt_attended","Attended"],["contract","Contract"],["closed","Closed"]];
+let PW=sessionStorage.getItem("esbpw")||"";
+let DATA=null, CH="All", RANGE=preset("mtd"), trendChart=null;
+
+function fmt(n){return n.toLocaleString()}
+function money(n){return "$"+Math.round(n).toLocaleString()}
+function iso(d){return d.toISOString().slice(0,10)}
+function preset(p){const now=new Date();const t=iso(now);let f;
+ if(p==="today")f=t;
+ else if(p==="wtd"){const d=new Date(now);d.setDate(d.getDate()-((d.getDay()+6)%7));f=iso(d)}
+ else if(p==="mtd")f=t.slice(0,8)+"01";
+ else if(p==="30"){const d=new Date(now);d.setDate(d.getDate()-30);f=iso(d)}
+ else if(p==="qtd"){const q=Math.floor(now.getMonth()/3)*3;f=iso(new Date(now.getFullYear(),q,1))}
+ else f=now.getFullYear()+"-01-01";
+ return {from:f,to:t}}
+
+async function load(){
+ const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data","")+"/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
+ if(r.status===401){sessionStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent="Wrong password";return}
+ DATA=await r.json();
+ document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";
+ render();
+}
+function go(){PW=document.getElementById("pw").value;sessionStorage.setItem("esbpw",PW);load()}
+
+function stageCounts(evts){const o={};STAGES.forEach(([k])=>o[k]=0);let rev=0;
+ evts.forEach(e=>{if(o[e.stage]!==undefined)o[e.stage]++;if(e.stage==="closed"&&e.amount)rev+=Number(e.amount)});
+ return {o,rev}}
+
+function render(){
+ const evts=DATA.events.filter(e=>CH==="All"||e.channel===CH);
+ const {o,rev}=stageCounts(evts);
+ const spendRows=DATA.spend.filter(s=>{const ym=s.ym;return ym>=RANGE.from.slice(0,7)&&ym<=RANGE.to.slice(0,7)&&(CH==="All"||s.channel===CH)});
+ const spend=spendRows.reduce((a,s)=>a+Number(s.spend),0);
+ // KPI row
+ let k="";
+ STAGES.forEach(([key,lbl])=>{k+='<div class="kpi"><div class="lbl">'+lbl+'</div><div class="val">'+fmt(o[key])+'</div></div>'});
+ k+='<div class="kpi"><div class="lbl">Revenue</div><div class="val" style="color:var(--green)">'+money(rev)+'</div></div>';
+ k+='<div class="kpi"><div class="lbl">Spend</div><div class="val">'+money(spend)+'</div><div class="sub">'+(spend>0?"ROAS "+(rev/spend).toFixed(1)+"x":"—")+'</div></div>';
+ document.getElementById("kpis").innerHTML=k;
+ // funnel
+ const max=Math.max(...STAGES.map(([s])=>o[s]),1);
+ let f="";
+ STAGES.forEach(([key,lbl],i)=>{
+  const cv=i>0&&o[STAGES[i-1][0]]>0?Math.round(100*o[key]/o[STAGES[i-1][0]])+"%":"";
+  f+='<div class="fstage">'+(cv?'<div class="fcv">'+cv+'</div>':'<div class="fcv">&nbsp;</div>')+'<div class="fnum">'+fmt(o[key])+'</div><div class="fbar" style="height:'+(Math.max(4,100*o[key]/max))+'%"></div><div class="flbl">'+lbl+'</div></div>'});
+ document.getElementById("funnel").innerHTML=f;
+ // conversion picker
+ const cf=document.getElementById("cvFrom"),ct=document.getElementById("cvTo");
+ if(!cf.options.length){STAGES.forEach(([key,lbl])=>{cf.add(new Option(lbl,key));ct.add(new Option(lbl,key))});cf.value="net";ct.value="appt_set";cf.onchange=ct.onchange=render}
+ const a=o[cf.value],b=o[ct.value];
+ document.getElementById("cvPct").textContent=a>0?Math.round(100*b/a)+"%":"—";
+ document.getElementById("cvDetail").textContent=fmt(b)+" of "+fmt(a)+" · "+CH;
+ // trend (weekly)
+ const wk={};evts.forEach(e=>{const d=new Date(e.dt);d.setDate(d.getDate()-((d.getDay()+6)%7));const w=iso(d);wk[w]=wk[w]||{};wk[w][e.stage]=(wk[w][e.stage]||0)+1});
+ const labels=Object.keys(wk).sort();
+ const mk=(s,c)=>({label:s,data:labels.map(l=>wk[l][s]||0),borderColor:c,backgroundColor:c,tension:.35,pointRadius:2});
+ if(trendChart)trendChart.destroy();
+ trendChart=new Chart(document.getElementById("trend"),{type:"line",data:{labels:labels.map(l=>l.slice(5)),datasets:[mk("gross","#22d3ee"),mk("net","#34d399"),mk("appt_attended","#fbbf24"),mk("contract","#f87171")]},options:{plugins:{legend:{labels:{color:"#8294b5",boxWidth:10}}},scales:{x:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"}},y:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"},beginAtZero:true}}}});
+ // $1M pace (always YTD regardless of range)
+ const yr=new Date().getFullYear();
+ const ytdRev=DATA.events.filter(e=>e.stage==="closed"&&e.dt>=yr+"-01-01").reduce((a,e)=>a+Number(e.amount||0),0);
+ const dayOfYear=Math.ceil((Date.now()-new Date(yr,0,0))/864e5);
+ const paceTarget=1000000*dayOfYear/365;
+ document.getElementById("paceRev").textContent=money(ytdRev)+" YTD";
+ document.getElementById("paceDetail").textContent="pace target by today: "+money(paceTarget)+" · "+(ytdRev>=paceTarget?"AHEAD":"behind")+" of $1M run rate";
+ document.getElementById("paceBar").style.width=Math.min(100,100*ytdRev/Math.max(paceTarget,1))+"%";
+ const mo=new Date().toISOString().slice(0,7);
+ const moClosed=DATA.events.filter(e=>e.stage==="closed"&&e.dt.startsWith(mo)).length;
+ document.getElementById("paceDeals").textContent=moClosed;
+ // channel table
+ const chs=[...new Set(DATA.events.map(e=>e.channel))].sort();
+ let t="<tr><th>Channel</th><th>Gross</th><th>Net</th><th>Set</th><th>Att</th><th>Ctr</th><th>Cls</th><th>Rev</th><th>Spend</th><th>ROAS</th></tr>";
+ chs.forEach(c=>{
+  const ce=DATA.events.filter(e=>e.channel===c);
+  const {o:co,rev:crev}=stageCounts(ce);
+  const cs=DATA.spend.filter(s=>s.channel===c&&s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)).reduce((a,s)=>a+Number(s.spend),0);
+  t+="<tr><td>"+c+"</td><td>"+co.gross+"</td><td>"+co.net+"</td><td>"+co.appt_set+"</td><td>"+co.appt_attended+"</td><td>"+co.contract+"</td><td>"+co.closed+"</td><td>"+money(crev)+"</td><td>"+money(cs)+"</td><td>"+(cs>0?(crev/cs).toFixed(1)+"x":"—")+"</td></tr>"});
+ document.getElementById("chTable").innerHTML=t;
+ // unmatched
+ document.getElementById("unmatched").innerHTML=DATA.unmatched.length?DATA.unmatched.map(u=>u.dt+" · "+u.title).join("<br>"):"All clean ✓";
+ document.getElementById("foot").textContent="Range "+RANGE.from+" → "+RANGE.to+" · data refreshes with the 15-min Salesforce sync · ESB Command v1";
+}
+
+document.getElementById("presets").addEventListener("click",e=>{
+ if(!e.target.dataset.p)return;
+ document.querySelectorAll("#presets .chip").forEach(c=>c.classList.remove("on"));
+ e.target.classList.add("on");RANGE=preset(e.target.dataset.p);load()});
+document.getElementById("channels").addEventListener("click",e=>{
+ if(!e.target.dataset.c)return;
+ document.querySelectorAll("#channels .chip").forEach(c=>c.classList.remove("on"));
+ e.target.classList.add("on");CH=e.target.dataset.c;render()});
+function customRange(){const a=document.getElementById("d1").value,b=document.getElementById("d2").value;if(a&&b){RANGE={from:a,to:b};document.querySelectorAll("#presets .chip").forEach(c=>c.classList.remove("on"));load()}}
+setInterval(()=>{if(PW&&DATA)load()},300000);
+if(PW)load();
+</script>
+</body></html>
