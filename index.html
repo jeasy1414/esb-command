@@ -115,7 +115,7 @@ canvas{max-height:230px}
 </div>
 
 <div class="grid">
-  <div class="card"><h3>By Channel</h3><table id="chTable"></table></div>
+  <div class="card"><h3>By Channel</h3><table id="chTable"></table><h3 style="margin-top:16px">By Deal Type (contracts &amp; closings in range)</h3><table id="dtTable"></table></div>
   <div class="card"><h3>⚠ Unmatched Appointments (fix in SF)</h3><div id="unmatched" class="muted"></div></div>
 </div>
 <div class="foot" id="foot"></div>
@@ -201,6 +201,14 @@ function render(){
   const cs=DATA.spend.filter(s=>s.channel===c&&s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)).reduce((a,s)=>a+Number(s.spend),0);
   t+="<tr><td>"+c+"</td><td>"+co.gross+"</td><td>"+co.net+"</td><td>"+co.appt_set+"</td><td>"+co.appt_attended+"</td><td>"+co.contract+"</td><td>"+co.closed+"</td><td>"+money(crev)+"</td><td>"+money(cs)+"</td><td>"+(cs>0?(crev/cs).toFixed(1)+"x":"—")+"</td></tr>"});
  document.getElementById("chTable").innerHTML=t;
+ // deal type breakdown (contract + closed rows carry dtype)
+ const dts={};
+ evts.filter(e=>e.dtype).forEach(e=>{const d=e.dtype;dts[d]=dts[d]||{contract:0,closed:0,potential:0,actual:0};
+  if(e.stage==="contract"){dts[d].contract++;dts[d].potential+=Number(e.amount||0)}
+  if(e.stage==="closed"){dts[d].closed++;dts[d].actual+=Number(e.amount||0)}});
+ let dt2="<tr><th>Type</th><th>Contracts</th><th>Potential Net</th><th>Closed</th><th>Actual Net</th></tr>";
+ Object.keys(dts).sort().forEach(d=>{const x=dts[d];dt2+="<tr><td>"+d+"</td><td>"+x.contract+"</td><td>"+money(x.potential)+"</td><td>"+x.closed+"</td><td style=\'color:var(--green)\'>"+money(x.actual)+"</td></tr>"});
+ document.getElementById("dtTable").innerHTML=Object.keys(dts).length?dt2:"<tr><td class=muted>no contracts in range</td></tr>";
  // unmatched
  document.getElementById("unmatched").innerHTML=DATA.unmatched.length?DATA.unmatched.map(u=>u.dt+" · "+u.title).join("<br>"):"All clean ✓";
  document.getElementById("foot").textContent="Range "+RANGE.from+" → "+RANGE.to+" · data refreshes with the 15-min Salesforce sync · ESB Command v1";
