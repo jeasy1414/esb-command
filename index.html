@@ -139,7 +139,7 @@ function preset(p){const now=new Date();const t=iso(now);let f;
  return {from:f,to:t}}
 
 async function load(){
- const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data","")+"/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
+ const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
  if(r.status===401){sessionStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent="Wrong password";return}
  DATA=await r.json();
  document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";
