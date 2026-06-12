@@ -183,14 +183,14 @@ function render(){
  trendChart=new Chart(document.getElementById("trend"),{type:"line",data:{labels:labels.map(l=>l.slice(5)),datasets:[mk("gross","#22d3ee"),mk("net","#34d399"),mk("appt_attended","#fbbf24"),mk("contract","#f87171")]},options:{plugins:{legend:{labels:{color:"#8294b5",boxWidth:10}}},scales:{x:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"}},y:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"},beginAtZero:true}}}});
  // $1M pace (always YTD regardless of range)
  const yr=new Date().getFullYear();
- const ytdRev=DATA.events.filter(e=>e.stage==="closed"&&e.dt>=yr+"-01-01").reduce((a,e)=>a+Number(e.amount||0),0);
+ const ytdRev=(DATA.ytdClosed||[]).reduce((a,e)=>a+Number(e.amount||0),0);
  const dayOfYear=Math.ceil((Date.now()-new Date(yr,0,0))/864e5);
  const paceTarget=1000000*dayOfYear/365;
  document.getElementById("paceRev").textContent=money(ytdRev)+" YTD";
  document.getElementById("paceDetail").textContent="pace target by today: "+money(paceTarget)+" · "+(ytdRev>=paceTarget?"AHEAD":"behind")+" of $1M run rate";
  document.getElementById("paceBar").style.width=Math.min(100,100*ytdRev/Math.max(paceTarget,1))+"%";
  const mo=new Date().toISOString().slice(0,7);
- const moClosed=DATA.events.filter(e=>e.stage==="closed"&&e.dt.startsWith(mo)).length;
+ const moClosed=(DATA.ytdClosed||[]).filter(e=>e.dt.startsWith(mo)).length;
  document.getElementById("paceDeals").textContent=moClosed;
  // channel table
  const chs=[...new Set(DATA.events.map(e=>e.channel))].sort();
