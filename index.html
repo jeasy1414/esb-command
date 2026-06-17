@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#0c1220;--card:#141d31;--line:#1f2c47;--text:#e8eefb;--dim:#8294b5;--cyan:#22d3ee;--green:#34d399;--red:#f87171;--amber:#fbbf24}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,'Segoe UI',Inter,sans-serif;padding:24px 30px;max-width:1180px;margin:0 auto}
+body{background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,'Segoe UI',Inter,sans-serif;padding:24px 30px;max-width:1080px;margin:0 auto}
 .hdr{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:21px;letter-spacing:.4px}
 .logo .house{width:34px;height:34px;background:var(--cyan);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#04222b;font-size:19px}
@@ -18,24 +18,26 @@ body{background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,'Segoe 
 .chip{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 15px;cursor:pointer;color:var(--dim);font-size:13px;font-weight:600}
 .chip.on{background:var(--cyan);color:#04222b;border-color:var(--cyan)}
 .rangeline{color:var(--dim);font-size:12.5px;margin-bottom:18px}
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.top{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
 .kpi .lbl{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:1px;text-transform:uppercase}
-.kpi .val{font-size:34px;font-weight:800;margin-top:4px;line-height:1}
+.kpi .val{font-size:32px;font-weight:800;margin-top:4px;line-height:1}
 .kpi .sub{font-size:12px;color:var(--dim);margin-top:5px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:16px}
-.card h3{font-size:12px;color:var(--dim);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:16px;font-weight:700}
-.funnel{display:flex;align-items:stretch;gap:0}
-.fcol{flex:1;display:flex;flex-direction:column;align-items:center}
-.fcell{width:100%;text-align:center}
-.fnum{font-size:30px;font-weight:800}
-.flbl{font-size:12px;color:var(--dim);margin-top:2px}
-.ftrack{height:10px;background:var(--line);border-radius:99px;margin-top:14px;overflow:hidden}
-.ftrack i{display:block;height:100%;background:linear-gradient(90deg,#22d3ee,#0e7490);border-radius:99px}
-.fconv{display:flex;align-items:center;justify-content:center;width:46px;flex:0 0 46px;color:var(--amber);font-weight:700;font-size:13px}
-.pacewrap{display:flex;gap:30px;flex-wrap:wrap;align-items:center}
-.pacebig{font-size:34px;font-weight:800}
-.pace{height:9px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:10px;max-width:520px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:16px}
+.card h3{font-size:12px;color:var(--dim);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:18px;font-weight:700}
+/* vertical funnel */
+.fstage{margin:0 auto}
+.fbar{height:46px;border-radius:9px;background:linear-gradient(90deg,#22d3ee,#0e7490);display:flex;align-items:center;justify-content:center;gap:10px;color:#04222b;font-weight:800;margin:0 auto;min-width:90px;transition:width .3s}
+.fbar .fc{font-size:21px}
+.fbar .fn{font-size:12.5px;font-weight:700;opacity:.85}
+.fstep{text-align:center;padding:6px 0;color:var(--amber);font-size:12.5px;font-weight:600}
+.fstep b{font-size:15px}
+.frev{margin:8px auto 0;text-align:center;background:rgba(52,211,153,.12);border:1px solid var(--green);border-radius:10px;padding:12px 18px;max-width:340px}
+.frev .l{font-size:11px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:700}
+.frev .v{font-size:28px;font-weight:800;color:var(--green)}
+.pacewrap{display:flex;gap:36px;flex-wrap:wrap;align-items:center}
+.pacebig{font-size:32px;font-weight:800}
+.pace{height:9px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:10px;max-width:460px}
 .pace i{display:block;height:100%;background:var(--green);border-radius:99px}
 .muted{color:var(--dim);font-size:12.5px}
 .toggle{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;width:100%;text-align:center}
@@ -52,7 +54,7 @@ tr:last-child td{border-bottom:none}
 #login input{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 16px;font-size:16px;width:260px;text-align:center}
 #login button{background:var(--cyan);color:#04222b;border:none;border-radius:10px;padding:12px 30px;font-size:15px;font-weight:700;cursor:pointer}
 canvas{max-height:220px}
-@media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.fnum{font-size:22px}}
+@media(max-width:860px){.top{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -78,9 +80,9 @@ canvas{max-height:220px}
 </div>
 <div class="rangeline" id="rangeline"></div>
 
-<div class="kpis" id="kpis"></div>
+<div class="top" id="top"></div>
 
-<div class="card"><h3>The Funnel — lead to close</h3><div class="funnel" id="funnel"></div></div>
+<div class="card"><h3>The Funnel — lead to close</h3><div id="funnel"></div></div>
 
 <div class="card"><h3>$1M Revenue Pace</h3>
   <div class="pacewrap">
@@ -114,7 +116,15 @@ canvas{max-height:220px}
 </div>
 
 <script>
-const STAGES=[["gross","Gross Leads"],["net","Net Leads"],["appt_set","Appts Set"],["appt_attended","Attended"],["contract","Contracts"],["closed","Closed"]];
+// funnel stages, each with the named conversion to it (mirrors the Revenue Funnel sheet)
+const STEPS=[
+ {key:"gross",        label:"Gross Leads"},
+ {key:"net",          label:"Net Leads",            conv:"Qualified Lead %"},
+ {key:"appt_set",     label:"Appointments Set",     conv:"Appointment Set %"},
+ {key:"appt_attended",label:"Appointments Attended",conv:"Appointment Attended %"},
+ {key:"offer",        label:"Offers Made",          conv:"Offer Made %"},
+ {key:"closed",       label:"Closed",               conv:"Close Rate %"}
+];
 let PW=sessionStorage.getItem("esbpw")||"";
 let DATA=null, RANGE=preset("mtd"), trendChart=null, OPEN=false;
 
@@ -142,27 +152,32 @@ function go(){PW=document.getElementById("pw").value;sessionStorage.setItem("esb
 function toggleDetails(){OPEN=!OPEN;document.getElementById("details").style.display=OPEN?"block":"none";
  document.getElementById("toggle").textContent=(OPEN?"▴ Hide":"▾ Show")+" breakdowns";if(OPEN)renderDetails()}
 
-function counts(evts){const o={};STAGES.forEach(([k])=>o[k]=0);let rev=0;
+function counts(evts){const o={};STEPS.forEach(s=>o[s.key]=0);let rev=0;
  evts.forEach(e=>{if(o[e.stage]!==undefined)o[e.stage]++;if(e.stage==="closed"&&e.amount)rev+=Number(e.amount)});return {o,rev}}
 function spendIn(fn){return (DATA.spend||[]).filter(s=>s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)&&fn(s)).reduce((a,s)=>a+Number(s.spend||0),0)}
 
 function render(){
  const {o,rev}=counts(DATA.events);
+ o.offer=(DATA.offers||[]).length;       // offers made in range
  const spend=spendIn(()=>true);
  document.getElementById("rangeline").textContent=(LBL[RANGE.p]||"")+"  ·  "+RANGE.from+" → "+RANGE.to;
- // 5 headline KPIs
- const tiles=[["New Leads",o.gross,o.net+" qualified"],["Appointments",o.appt_attended,o.appt_set+" set"],
-  ["Contracts",o.contract,""],["Closed",o.closed,money(rev)+" revenue"],
-  ["Spend",spend?money(spend):"—",spend&&rev?"ROAS "+(rev/spend).toFixed(1)+"x":""]];
- document.getElementById("kpis").innerHTML=tiles.map(([l,v,s])=>
-  '<div class="kpi"><div class="lbl">'+l+'</div><div class="val">'+(typeof v==="number"?fmt(v):v)+'</div><div class="sub">'+s+'</div></div>').join("");
- // funnel — stages with conversion connectors
- const max=Math.max(...STAGES.map(([s])=>o[s]),1);
- let f="";
- STAGES.forEach(([key,lbl],i)=>{
-  if(i>0){const prev=o[STAGES[i-1][0]];const cv=prev>0?Math.round(100*o[key]/prev)+"%":"—";f+='<div class="fconv">'+cv+'</div>'}
-  f+='<div class="fcol"><div class="fcell"><div class="fnum">'+fmt(o[key])+'</div><div class="flbl">'+lbl+'</div></div><div class="ftrack" style="width:100%"><i style="width:'+(Math.max(6,100*o[key]/max))+'%"></i></div></div>'});
- document.getElementById("funnel").innerHTML=f;
+ // top strip: spend (left, as Joe asked) + revenue + ROAS
+ document.getElementById("top").innerHTML=
+  '<div class="kpi"><div class="lbl">Marketing Spend</div><div class="val">'+(spend?money(spend):"—")+'</div><div class="sub">'+fmt(o.gross)+' leads · '+(spend&&o.gross?money(spend/o.gross)+"/lead":"")+'</div></div>'
+  +'<div class="kpi"><div class="lbl">Revenue</div><div class="val" style="color:var(--green)">'+money(rev)+'</div><div class="sub">'+fmt(o.closed)+' closed</div></div>'
+  +'<div class="kpi"><div class="lbl">ROAS</div><div class="val">'+(spend>0?(rev/spend).toFixed(1)+"x":"—")+'</div><div class="sub">revenue per $1 spent</div></div>';
+ // funnel — narrowing bars + named conversion between each stage
+ const gross=Math.max(o.gross,1);
+ let html="", prevW=100;
+ STEPS.forEach((s,i)=>{
+  const c=o[s.key]||0;
+  if(i>0){const prev=o[STEPS[i-1].key]||0;const pct=prev>0?Math.round(100*c/prev)+"%":"—";
+   html+='<div class="fstep">'+s.conv+' <b>'+pct+'</b></div>'}
+  let w=Math.min(prevW, Math.max(16, 100*c/gross)); prevW=w;   // clamp so it always narrows (funnel shape)
+  html+='<div class="fstage" style="width:'+w+'%"><div class="fbar"><span class="fc">'+fmt(c)+'</span><span class="fn">'+s.label+'</span></div></div>';
+ });
+ html+='<div class="frev"><div class="l">Revenue from closings</div><div class="v">'+money(rev)+'</div></div>';
+ document.getElementById("funnel").innerHTML=html;
  // pace (YTD vs $1M)
  const yr=new Date().getFullYear();
  const ytdRev=(DATA.ytdClosed||[]).reduce((a,e)=>a+Number(e.amount||0),0);
@@ -177,20 +192,17 @@ function render(){
 }
 
 function renderDetails(){
- // by channel — simple
  const chs=[...new Set(DATA.events.map(e=>e.channel))];
  let t="<tr><th>Channel</th><th>Leads</th><th>Appts</th><th>Closed</th><th>Spend</th><th>ROAS</th></tr>";
  chs.map(c=>{const {o:co,rev:cr}=counts(DATA.events.filter(e=>e.channel===c));const cs=spendIn(s=>s.channel===c);
   return [c,co.gross,co.appt_attended,co.closed,cr,cs]}).sort((a,b)=>b[1]-a[1]).forEach(r=>{
   t+="<tr><td>"+r[0]+"</td><td>"+fmt(r[1])+"</td><td>"+fmt(r[2])+"</td><td>"+fmt(r[3])+"</td><td>"+money(r[5])+"</td><td>"+(r[5]>0?(r[4]/r[5]).toFixed(1)+"x":"—")+"</td></tr>"});
  document.getElementById("chTable").innerHTML=t;
- // by rep
  const reps=[...new Set(DATA.events.map(e=>e.owner).filter(x=>x&&x!=="Unknown"))];
  let rt="<tr><th>Rep</th><th>Leads</th><th>Set</th><th>Attended</th></tr>";
  reps.map(rp=>{const {o:ro}=counts(DATA.events.filter(e=>e.owner===rp));return [rp,ro.gross,ro.appt_set,ro.appt_attended]})
   .sort((a,b)=>b[3]-a[3]).forEach(r=>{rt+="<tr><td>"+r[0]+"</td><td>"+fmt(r[1])+"</td><td>"+fmt(r[2])+"</td><td>"+fmt(r[3])+"</td></tr>"});
  document.getElementById("repTable").innerHTML=reps.length?rt:"<tr><td class=muted>no rep activity</td></tr>";
- // offers
  const off=DATA.offers||[];const oa=off.map(x=>Number(x.offer)).filter(x=>x>0);
  const acc=off.filter(x=>x.outcome==="accepted").length,lost=off.filter(x=>x.outcome==="lost").length,pend=off.filter(x=>x.outcome==="pending").length;
  document.getElementById("offTable").innerHTML=
@@ -198,16 +210,14 @@ function renderDetails(){
   +"<tr><td>Win rate</td><td>"+(acc+lost?Math.round(100*acc/(acc+lost))+"%":"—")+"</td></tr>"
   +"<tr><td>Avg offer</td><td>"+(oa.length?money(oa.reduce((a,b)=>a+b,0)/oa.length):"—")+"</td></tr>"
   +"<tr><td>Accepted / Lost / Pending</td><td>"+acc+" / "+lost+" / "+pend+"</td></tr>";
- // trend
  const wk={};DATA.events.forEach(e=>{const d=new Date(e.dt);d.setDate(d.getDate()-((d.getDay()+6)%7));const w=iso(d);wk[w]=wk[w]||{};wk[w][e.stage]=(wk[w][e.stage]||0)+1});
  const labels=Object.keys(wk).sort();
  const mk=(s,c)=>({label:s,data:labels.map(l=>wk[l][s]||0),borderColor:c,backgroundColor:c,tension:.35,pointRadius:2});
  if(trendChart)trendChart.destroy();
- trendChart=new Chart(document.getElementById("trend"),{type:"line",data:{labels:labels.map(l=>l.slice(5)),datasets:[mk("gross","#22d3ee"),mk("appt_attended","#fbbf24"),mk("contract","#f87171")]},options:{plugins:{legend:{labels:{color:"#8294b5",boxWidth:10}}},scales:{x:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"}},y:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"},beginAtZero:true}}}});
- // unmatched + note
+ trendChart=new Chart(document.getElementById("trend"),{type:"line",data:{labels:labels.map(l=>l.slice(5)),datasets:[mk("gross","#22d3ee"),mk("appt_attended","#fbbf24"),mk("closed","#34d399")]},options:{plugins:{legend:{labels:{color:"#8294b5",boxWidth:10}}},scales:{x:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"}},y:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"},beginAtZero:true}}}});
  document.getElementById("unmatched").innerHTML=DATA.unmatched.length?DATA.unmatched.map(u=>u.dt+" · "+u.title).join("<br>"):"All clean ✓";
  const spSrc=[...new Set((DATA.spend||[]).map(s=>s.src))].join(" + ");
- document.getElementById("note").innerHTML='<b>Notes:</b> Attended = scheduled appt in the past, not cancelled (proxy until SF tracks true attendance) · offers = opportunities with a logged offer · spend = '+spSrc+' · refreshes with the 15-min Salesforce sync.';
+ document.getElementById("note").innerHTML='<b>Notes:</b> conversions are period ratios (events in the range), so short ranges can read over 100% as appts catch up to earlier leads — they settle over quarter/year · Attended = scheduled appt in the past, not cancelled (proxy until SF tracks true attendance) · Offers made = opportunities with a logged offer · Spend = '+spSrc+' · refreshes with the 15-min Salesforce sync.';
 }
 
 document.getElementById("presets").addEventListener("click",e=>{
