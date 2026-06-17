@@ -8,8 +8,8 @@
 <style>
 :root{--bg:#0c1220;--card:#141d31;--line:#1f2c47;--text:#e8eefb;--dim:#8294b5;--cyan:#22d3ee;--green:#34d399;--red:#f87171;--amber:#fbbf24}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,'Segoe UI',Inter,sans-serif;padding:22px 28px}
-.hdr{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+body{background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,'Segoe UI',Inter,sans-serif;padding:24px 30px;max-width:1180px;margin:0 auto}
+.hdr{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:21px;letter-spacing:.4px}
 .logo .house{width:34px;height:34px;background:var(--cyan);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#04222b;font-size:19px}
 .logo small{display:block;font-size:10px;font-weight:600;color:var(--dim);letter-spacing:2.5px}
@@ -17,49 +17,42 @@ body{background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,'Segoe 
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 15px;cursor:pointer;color:var(--dim);font-size:13px;font-weight:600}
 .chip.on{background:var(--cyan);color:#04222b;border-color:var(--cyan)}
-.lblrow{font-size:10px;color:var(--dim);font-weight:700;letter-spacing:1.6px;text-transform:uppercase;margin:0 0 6px 2px}
-.dates{display:flex;gap:6px;align-items:center}
-input[type=date]{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 8px;font-size:13px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
-.kpi .lbl{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
-.kpi .val{font-size:30px;font-weight:800;margin-top:3px}
-.kpi .sub{font-size:12px;color:var(--dim);margin-top:2px}
-.kpi .sub b.up{color:var(--green)}.kpi .sub b.dn{color:var(--red)}
-.grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;overflow-x:auto}
-.card h3{font-size:12px;color:var(--dim);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:12px;font-weight:700}
-.card h3 .flag{color:var(--amber);font-weight:600;letter-spacing:0;text-transform:none}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{color:var(--dim);text-align:right;font-weight:600;padding:5px 8px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.8px;cursor:pointer;white-space:nowrap}
-th:first-child,td:first-child{text-align:left}
-td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
-tr:last-child td{border-bottom:none}
-.funnelbar{display:flex;align-items:flex-end;gap:10px;height:170px;padding-top:8px}
-.fstage{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;height:100%}
-.fbar{width:100%;background:linear-gradient(180deg,#22d3ee,#0e7490);border-radius:8px 8px 3px 3px;min-height:4px}
-.fnum{font-weight:800;font-size:17px}
-.flbl{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
-.fcv{font-size:10.5px;color:var(--amber);font-weight:700}
-.convsel{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-select{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px}
-.bigpct{font-size:46px;font-weight:800;color:var(--cyan)}
-.pace{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+.rangeline{color:var(--dim);font-size:12.5px;margin-bottom:18px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.kpi .lbl{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.kpi .val{font-size:34px;font-weight:800;margin-top:4px;line-height:1}
+.kpi .sub{font-size:12px;color:var(--dim);margin-top:5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:16px}
+.card h3{font-size:12px;color:var(--dim);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:16px;font-weight:700}
+.funnel{display:flex;align-items:stretch;gap:0}
+.fcol{flex:1;display:flex;flex-direction:column;align-items:center}
+.fcell{width:100%;text-align:center}
+.fnum{font-size:30px;font-weight:800}
+.flbl{font-size:12px;color:var(--dim);margin-top:2px}
+.ftrack{height:10px;background:var(--line);border-radius:99px;margin-top:14px;overflow:hidden}
+.ftrack i{display:block;height:100%;background:linear-gradient(90deg,#22d3ee,#0e7490);border-radius:99px}
+.fconv{display:flex;align-items:center;justify-content:center;width:46px;flex:0 0 46px;color:var(--amber);font-weight:700;font-size:13px}
+.pacewrap{display:flex;gap:30px;flex-wrap:wrap;align-items:center}
+.pacebig{font-size:34px;font-weight:800}
+.pace{height:9px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:10px;max-width:520px}
 .pace i{display:block;height:100%;background:var(--green);border-radius:99px}
 .muted{color:var(--dim);font-size:12.5px}
-.ostat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
-.ostat .o{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.ostat .o .l{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-weight:700}
-.ostat .o .v{font-size:24px;font-weight:800;margin-top:2px}
+.toggle{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;width:100%;text-align:center}
+#details{display:none;margin-top:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{color:var(--dim);text-align:right;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.note{color:var(--dim);font-size:11.5px;margin-top:14px;line-height:1.7}
+.note b{color:var(--amber)}
 #login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:50}
 #login input{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 16px;font-size:16px;width:260px;text-align:center}
 #login button{background:var(--cyan);color:#04222b;border:none;border-radius:10px;padding:12px 30px;font-size:15px;font-weight:700;cursor:pointer}
-.foot{color:var(--dim);font-size:11.5px;margin-top:10px}
-.notes{color:var(--dim);font-size:11.5px;margin-top:14px;line-height:1.7}
-.notes b{color:var(--amber)}
-canvas{max-height:230px}
-@media(max-width:1000px){.grid,.grid3{grid-template-columns:1fr}}
+canvas{max-height:220px}
+@media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.fnum{font-size:22px}}
 </style>
 </head>
 <body>
@@ -76,77 +69,54 @@ canvas{max-height:230px}
   <div class="spacer"></div>
   <div class="chips" id="presets">
     <div class="chip" data-p="today">Today</div>
-    <div class="chip" data-p="wtd">This Week</div>
-    <div class="chip on" data-p="mtd">This Month</div>
-    <div class="chip" data-p="30">Last 30</div>
+    <div class="chip" data-p="wtd">Week</div>
+    <div class="chip on" data-p="mtd">Month</div>
+    <div class="chip" data-p="30">30 days</div>
     <div class="chip" data-p="qtd">Quarter</div>
-    <div class="chip" data-p="ytd">YTD</div>
-  </div>
-  <div class="dates">
-    <input type="date" id="d1"><span class="muted">to</span><input type="date" id="d2">
-    <div class="chip" onclick="customRange()">Go</div>
+    <div class="chip" data-p="ytd">Year</div>
   </div>
 </div>
-
-<div class="lblrow">Channel</div>
-<div class="chips" id="channels" style="margin-bottom:14px">
-  <div class="chip on" data-c="All">All Channels</div>
-  <div class="chip" data-c="Direct Mail">Direct Mail</div>
-  <div class="chip" data-c="PPC">PPC</div>
-  <div class="chip" data-c="Property Leads">Property Leads</div>
-  <div class="chip" data-c="Probate/LP">Probate/LP</div>
-  <div class="chip" data-c="Website">Website</div>
-  <div class="chip" data-c="Other">Other</div>
-</div>
-
-<div class="lblrow">Acquisition Rep</div>
-<div class="chips" id="owners" style="margin-bottom:16px"></div>
+<div class="rangeline" id="rangeline"></div>
 
 <div class="kpis" id="kpis"></div>
 
-<div class="grid">
-  <div class="card"><h3>The Funnel</h3><div class="funnelbar" id="funnel"></div></div>
-  <div class="card"><h3>Any-Stage Conversion</h3>
-    <div class="convsel">
-      <select id="cvFrom"></select><span class="muted">→</span><select id="cvTo"></select>
+<div class="card"><h3>The Funnel — lead to close</h3><div class="funnel" id="funnel"></div></div>
+
+<div class="card"><h3>$1M Revenue Pace</h3>
+  <div class="pacewrap">
+    <div>
+      <div class="pacebig" id="paceRev"></div>
+      <div class="muted" id="paceDetail"></div>
+      <div class="pace"><i id="paceBar" style="width:0%"></i></div>
     </div>
-    <div class="bigpct" id="cvPct">—</div>
-    <div class="muted" id="cvDetail"></div>
+    <div>
+      <div class="pacebig" id="paceDeals"></div>
+      <div class="muted">closings this month · target 5–6</div>
+    </div>
   </div>
 </div>
 
-<div class="grid">
-  <div class="card"><h3>Funnel Detail — every step</h3><table id="funnelTable"></table></div>
-  <div class="card"><h3>Offer Performance <span class="flag" id="offerFlag"></span></h3><div id="offers"></div></div>
-</div>
+<div class="toggle" id="toggle" onclick="toggleDetails()">▾ Show breakdowns</div>
 
-<div class="grid">
-  <div class="card"><h3>Weekly Trend</h3><canvas id="trend"></canvas></div>
-  <div class="card"><h3>$1M Pace</h3>
-    <div style="font-size:26px;font-weight:800" id="paceRev"></div>
-    <div class="muted" id="paceDetail"></div>
-    <div class="pace"><i id="paceBar" style="width:0%"></i></div>
-    <div style="margin-top:16px;font-size:26px;font-weight:800" id="paceDeals"></div>
-    <div class="muted">closings this month · target 5–6</div>
+<div id="details">
+  <div class="grid">
+    <div class="card"><h3>By Channel</h3><table id="chTable"></table></div>
+    <div class="card"><h3>By Rep — acquisitions</h3><table id="repTable"></table></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>Offers</h3><table id="offTable"></table></div>
+    <div class="card"><h3>Weekly Trend</h3><canvas id="trend"></canvas></div>
+  </div>
+  <div class="card"><h3>⚠ Unmatched Appointments (fix in SF)</h3><div id="unmatched" class="muted"></div>
+    <div class="note" id="note"></div>
   </div>
 </div>
-
-<div class="grid">
-  <div class="card"><h3>By Channel — funnel, spend &amp; cost-per</h3><table id="chTable"></table>
-    <h3 style="margin-top:16px">By Deal Type (contracts &amp; closings in range)</h3><table id="dtTable"></table></div>
-  <div class="card"><h3>By Rep — acquisitions <span class="flag">set→attended</span></h3><table id="repTable"></table>
-    <h3 style="margin-top:16px">⚠ Unmatched Appointments (fix in SF)</h3><div id="unmatched" class="muted"></div></div>
-</div>
-
-<div class="notes" id="notes"></div>
-<div class="foot" id="foot"></div>
 </div>
 
 <script>
-const STAGES=[["gross","Gross"],["net","Net"],["appt_set","Appt Set"],["appt_attended","Attended"],["contract","Contract"],["closed","Closed"]];
+const STAGES=[["gross","Gross Leads"],["net","Net Leads"],["appt_set","Appts Set"],["appt_attended","Attended"],["contract","Contracts"],["closed","Closed"]];
 let PW=sessionStorage.getItem("esbpw")||"";
-let DATA=null, CH="All", OW="All", RANGE=preset("mtd"), trendChart=null;
-let chSort={col:0,dir:1}, repSort={col:0,dir:1};
+let DATA=null, RANGE=preset("mtd"), trendChart=null, OPEN=false;
 
 function fmt(n){return (n||0).toLocaleString()}
 function money(n){return "$"+Math.round(n||0).toLocaleString()}
@@ -158,158 +128,92 @@ function preset(p){const now=new Date();const t=iso(now);let f;
  else if(p==="30"){const d=new Date(now);d.setDate(d.getDate()-30);f=iso(d)}
  else if(p==="qtd"){const q=Math.floor(now.getMonth()/3)*3;f=iso(new Date(now.getFullYear(),q,1))}
  else f=now.getFullYear()+"-01-01";
- return {from:f,to:t}}
+ return {from:f,to:t,p:p}}
+const LBL={today:"Today",wtd:"This week",mtd:"This month",30:"Last 30 days",qtd:"This quarter",ytd:"Year to date"};
 
 async function load(){
  const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
  if(r.status===401){sessionStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent="Wrong password";return}
  DATA=await r.json();
  document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";
- buildOwnerChips();
  render();
 }
 function go(){PW=document.getElementById("pw").value;sessionStorage.setItem("esbpw",PW);load()}
+function toggleDetails(){OPEN=!OPEN;document.getElementById("details").style.display=OPEN?"block":"none";
+ document.getElementById("toggle").textContent=(OPEN?"▴ Hide":"▾ Show")+" breakdowns";if(OPEN)renderDetails()}
 
-function buildOwnerChips(){
- const box=document.getElementById("owners");
- const owners=[...new Set((DATA.events||[]).map(e=>e.owner).filter(o=>o&&o!=="Unknown"))].sort();
- let h='<div class="chip'+(OW==="All"?" on":"")+'" data-o="All">All Reps</div>';
- owners.forEach(o=>{h+='<div class="chip'+(OW===o?" on":"")+'" data-o="'+o+'">'+o+'</div>'});
- box.innerHTML=h;
-}
-
-function stageCounts(evts){const o={};STAGES.forEach(([k])=>o[k]=0);let rev=0;
- evts.forEach(e=>{if(o[e.stage]!==undefined)o[e.stage]++;if(e.stage==="closed"&&e.amount)rev+=Number(e.amount)});
- return {o,rev}}
-function spendFor(filterFn){return (DATA.spend||[]).filter(s=>s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)&&filterFn(s))
- .reduce((a,s)=>({spend:a.spend+Number(s.spend||0),leads:a.leads+Number(s.lead_count||0)}),{spend:0,leads:0})}
-function median(arr){if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2}
+function counts(evts){const o={};STAGES.forEach(([k])=>o[k]=0);let rev=0;
+ evts.forEach(e=>{if(o[e.stage]!==undefined)o[e.stage]++;if(e.stage==="closed"&&e.amount)rev+=Number(e.amount)});return {o,rev}}
+function spendIn(fn){return (DATA.spend||[]).filter(s=>s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)&&fn(s)).reduce((a,s)=>a+Number(s.spend||0),0)}
 
 function render(){
- const evts=DATA.events.filter(e=>(CH==="All"||e.channel===CH)&&(OW==="All"||e.owner===OW));
- const offers=(DATA.offers||[]).filter(o=>(CH==="All"||o.channel===CH)&&(OW==="All"||o.owner===OW));
- const {o,rev}=stageCounts(evts);
- const sp=spendFor(s=>CH==="All"||s.channel===CH);const spend=sp.spend;
- // KPI row
- let k="";
- STAGES.forEach(([key,lbl])=>{k+='<div class="kpi"><div class="lbl">'+lbl+'</div><div class="val">'+fmt(o[key])+'</div></div>'});
- k+='<div class="kpi"><div class="lbl">Offers</div><div class="val">'+fmt(offers.length)+'</div></div>';
- k+='<div class="kpi"><div class="lbl">Revenue</div><div class="val" style="color:var(--green)">'+money(rev)+'</div></div>';
- k+='<div class="kpi"><div class="lbl">Spend</div><div class="val">'+money(spend)+'</div><div class="sub">'+(spend>0?"ROAS "+(rev/spend).toFixed(1)+"x":"—")+'</div></div>';
- document.getElementById("kpis").innerHTML=k;
- // funnel bars
+ const {o,rev}=counts(DATA.events);
+ const spend=spendIn(()=>true);
+ document.getElementById("rangeline").textContent=(LBL[RANGE.p]||"")+"  ·  "+RANGE.from+" → "+RANGE.to;
+ // 5 headline KPIs
+ const tiles=[["New Leads",o.gross,o.net+" qualified"],["Appointments",o.appt_attended,o.appt_set+" set"],
+  ["Contracts",o.contract,""],["Closed",o.closed,money(rev)+" revenue"],
+  ["Spend",spend?money(spend):"—",spend&&rev?"ROAS "+(rev/spend).toFixed(1)+"x":""]];
+ document.getElementById("kpis").innerHTML=tiles.map(([l,v,s])=>
+  '<div class="kpi"><div class="lbl">'+l+'</div><div class="val">'+(typeof v==="number"?fmt(v):v)+'</div><div class="sub">'+s+'</div></div>').join("");
+ // funnel — stages with conversion connectors
  const max=Math.max(...STAGES.map(([s])=>o[s]),1);
  let f="";
  STAGES.forEach(([key,lbl],i)=>{
-  const cv=i>0&&o[STAGES[i-1][0]]>0?Math.round(100*o[key]/o[STAGES[i-1][0]])+"%":"";
-  f+='<div class="fstage">'+(cv?'<div class="fcv">'+cv+'</div>':'<div class="fcv">&nbsp;</div>')+'<div class="fnum">'+fmt(o[key])+'</div><div class="fbar" style="height:'+(Math.max(4,100*o[key]/max))+'%"></div><div class="flbl">'+lbl+'</div></div>'});
+  if(i>0){const prev=o[STAGES[i-1][0]];const cv=prev>0?Math.round(100*o[key]/prev)+"%":"—";f+='<div class="fconv">'+cv+'</div>'}
+  f+='<div class="fcol"><div class="fcell"><div class="fnum">'+fmt(o[key])+'</div><div class="flbl">'+lbl+'</div></div><div class="ftrack" style="width:100%"><i style="width:'+(Math.max(6,100*o[key]/max))+'%"></i></div></div>'});
  document.getElementById("funnel").innerHTML=f;
- // funnel detail table (count, step %, cumulative %)
- const gross=o.gross||0;
- let ft="<tr><th>Stage</th><th>Count</th><th>Step %</th><th>Cum % of gross</th></tr>";
- STAGES.forEach(([key,lbl],i)=>{
-  const prev=i>0?o[STAGES[i-1][0]]:0;
-  const step=i>0?(prev>0?Math.round(100*o[key]/prev)+"%":"—"):"—";
-  const cum=gross>0?Math.round(100*o[key]/gross)+"%":"—";
-  ft+="<tr><td>"+lbl+"</td><td>"+fmt(o[key])+"</td><td>"+step+"</td><td>"+cum+"</td></tr>"});
- document.getElementById("funnelTable").innerHTML=ft;
- // conversion picker
- const cf=document.getElementById("cvFrom"),ct=document.getElementById("cvTo");
- if(!cf.options.length){STAGES.forEach(([key,lbl])=>{cf.add(new Option(lbl,key));ct.add(new Option(lbl,key))});cf.value="net";ct.value="appt_set";cf.onchange=ct.onchange=render}
- const a=o[cf.value],b=o[ct.value];
- document.getElementById("cvPct").textContent=a>0?Math.round(100*b/a)+"%":"—";
- document.getElementById("cvDetail").textContent=fmt(b)+" of "+fmt(a)+" · "+CH+(OW!=="All"?" · "+OW:"");
- // offers card
- const oa=offers.map(x=>Number(x.offer)).filter(x=>x>0);
- const acc=offers.filter(x=>x.outcome==="accepted").length, lost=offers.filter(x=>x.outcome==="lost").length, pend=offers.filter(x=>x.outcome==="pending").length;
- const decided=acc+lost;
- document.getElementById("offers").innerHTML=
-  '<div class="ostat">'
-  +'<div class="o"><div class="l">Offers Made</div><div class="v">'+fmt(offers.length)+'</div></div>'
-  +'<div class="o"><div class="l">Win Rate</div><div class="v">'+(decided>0?Math.round(100*acc/decided)+"%":"—")+'</div></div>'
-  +'<div class="o"><div class="l">Avg Offer</div><div class="v">'+(oa.length?money(oa.reduce((x,y)=>x+y,0)/oa.length):"—")+'</div></div>'
-  +'<div class="o"><div class="l">Median Offer</div><div class="v">'+(oa.length?money(median(oa)):"—")+'</div></div>'
-  +'</div>'
-  +'<div class="muted">Accepted '+acc+' · Lost '+lost+' · Pending '+pend+'  ·  win rate = accepted of decided</div>'
-  +'<div class="muted">offer-to-ARV: <b style="color:var(--amber)">n/a</b> — no ARV field yet · offers dated by opportunity creation</div>';
- document.getElementById("offerFlag").textContent="logged offers only";
- // trend (weekly)
- const wk={};evts.forEach(e=>{const d=new Date(e.dt);d.setDate(d.getDate()-((d.getDay()+6)%7));const w=iso(d);wk[w]=wk[w]||{};wk[w][e.stage]=(wk[w][e.stage]||0)+1});
- const labels=Object.keys(wk).sort();
- const mk=(s,c)=>({label:s,data:labels.map(l=>wk[l][s]||0),borderColor:c,backgroundColor:c,tension:.35,pointRadius:2});
- if(trendChart)trendChart.destroy();
- trendChart=new Chart(document.getElementById("trend"),{type:"line",data:{labels:labels.map(l=>l.slice(5)),datasets:[mk("gross","#22d3ee"),mk("net","#34d399"),mk("appt_attended","#fbbf24"),mk("contract","#f87171")]},options:{plugins:{legend:{labels:{color:"#8294b5",boxWidth:10}}},scales:{x:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"}},y:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"},beginAtZero:true}}}});
- // $1M pace (always YTD regardless of range)
+ // pace (YTD vs $1M)
  const yr=new Date().getFullYear();
  const ytdRev=(DATA.ytdClosed||[]).reduce((a,e)=>a+Number(e.amount||0),0);
  const dayOfYear=Math.ceil((Date.now()-new Date(yr,0,0))/864e5);
  const paceTarget=1000000*dayOfYear/365;
  document.getElementById("paceRev").textContent=money(ytdRev)+" YTD";
- document.getElementById("paceDetail").textContent="pace target by today: "+money(paceTarget)+" · "+(ytdRev>=paceTarget?"AHEAD":"behind")+" of $1M run rate";
+ document.getElementById("paceDetail").textContent=(ytdRev>=paceTarget?"ahead of":"behind")+" the $1M pace ("+money(paceTarget)+" by today)";
  document.getElementById("paceBar").style.width=Math.min(100,100*ytdRev/Math.max(paceTarget,1))+"%";
  const mo=new Date().toISOString().slice(0,7);
- const moClosed=(DATA.ytdClosed||[]).filter(e=>e.dt.startsWith(mo)).length;
- document.getElementById("paceDeals").textContent=moClosed;
- // channel table — funnel + spend + cost-per (sortable)
- const chs=[...new Set(DATA.events.map(e=>e.channel))];
- const chRows=chs.map(c=>{
-  const ce=DATA.events.filter(e=>e.channel===c&&(OW==="All"||e.owner===OW));
-  const {o:co,rev:crev}=stageCounts(ce);
-  const cs=spendFor(s=>s.channel===c).spend;
-  return [c,co.gross,co.net,co.appt_set,co.appt_attended,co.contract,co.closed,crev,cs,
-    cs>0&&co.gross>0?cs/co.gross:0, cs>0&&co.closed>0?cs/co.closed:0, cs>0?crev/cs:0]});
- chRows.sort((a,b)=>(a[chSort.col]>b[chSort.col]?1:-1)*chSort.dir);
- const chHead=["Channel","Gross","Net","Set","Att","Ctr","Cls","Rev","Spend","CPL","$/Close","ROAS"];
- let t="<tr>"+chHead.map((h,i)=>'<th onclick="sortCh('+i+')">'+h+'</th>').join("")+"</tr>";
- chRows.forEach(r=>{t+="<tr><td>"+r[0]+"</td><td>"+fmt(r[1])+"</td><td>"+fmt(r[2])+"</td><td>"+fmt(r[3])+"</td><td>"+fmt(r[4])+"</td><td>"+fmt(r[5])+"</td><td>"+fmt(r[6])+"</td><td>"+money(r[7])+"</td><td>"+money(r[8])+"</td><td>"+(r[9]?money(r[9]):"—")+"</td><td>"+(r[10]?money(r[10]):"—")+"</td><td>"+(r[11]?r[11].toFixed(1)+"x":"—")+"</td></tr>"});
- document.getElementById("chTable").innerHTML=t;
- // deal type breakdown
- const dts={};
- evts.filter(e=>e.dtype).forEach(e=>{const d=e.dtype;dts[d]=dts[d]||{contract:0,closed:0,potential:0,actual:0};
-  if(e.stage==="contract"){dts[d].contract++;dts[d].potential+=Number(e.amount||0)}
-  if(e.stage==="closed"){dts[d].closed++;dts[d].actual+=Number(e.amount||0)}});
- let dt2="<tr><th>Type</th><th>Contracts</th><th>Potential Net</th><th>Closed</th><th>Actual Net</th></tr>";
- Object.keys(dts).sort().forEach(d=>{const x=dts[d];dt2+="<tr><td>"+d+"</td><td>"+x.contract+"</td><td>"+money(x.potential)+"</td><td>"+x.closed+"</td><td style='color:var(--green)'>"+money(x.actual)+"</td></tr>"});
- document.getElementById("dtTable").innerHTML=Object.keys(dts).length?dt2:"<tr><td class=muted>no contracts in range</td></tr>";
- // by rep table (acquisition activity; strongest set→attended)
- const reps=[...new Set(evts.map(e=>e.owner).filter(x=>x&&x!=="Unknown"))];
- const repRows=reps.map(rp=>{
-  const re=evts.filter(e=>e.owner===rp);const {o:ro}=stageCounts(re);
-  const ro2=offers.filter(x=>x.owner===rp);
-  return [rp,ro.gross,ro.net,ro.appt_set,ro.appt_attended,ro2.length,ro2.filter(x=>x.outcome==="accepted").length]});
- repRows.sort((a,b)=>(a[repSort.col]>b[repSort.col]?1:-1)*repSort.dir);
- const repHead=["Rep","Gross","Net","Set","Att","Offers","Accepted"];
- let rt="<tr>"+repHead.map((h,i)=>'<th onclick="sortRep('+i+')">'+h+'</th>').join("")+"</tr>";
- repRows.forEach(r=>{rt+="<tr><td>"+r[0]+"</td><td>"+fmt(r[1])+"</td><td>"+fmt(r[2])+"</td><td>"+fmt(r[3])+"</td><td>"+fmt(r[4])+"</td><td>"+fmt(r[5])+"</td><td>"+fmt(r[6])+"</td></tr>"});
- document.getElementById("repTable").innerHTML=repRows.length?rt:"<tr><td class=muted>no rep activity in range</td></tr>";
- // unmatched
- document.getElementById("unmatched").innerHTML=DATA.unmatched.length?DATA.unmatched.map(u=>u.dt+" · "+u.title).join("<br>"):"All clean ✓";
- // honesty notes
- const spSrc=[...new Set((DATA.spend||[]).map(s=>s.src))].join(" + ");
- document.getElementById("notes").innerHTML=
-  '<b>Read me — what these numbers do and don\'t mean:</b><br>'
-  +'• <b>Attended</b> = a scheduled appointment in the past, not cancelled — a proxy until Salesforce records true attendance.<br>'
-  +'• <b>Offers</b> = opportunities with a logged "Last Offer Made" ('+fmt((DATA.offers||[]).length)+' total); offer-to-ARV is unavailable (no ARV field yet). Dated by opportunity creation.<br>'
-  +'• <b>Contract/Close rep</b> attribution is pending — the By-Rep table is reliable for Set→Attended.<br>'
-  +'• <b>Spend</b> source: '+spSrc+' (SF Marketing_Spend auto-syncs; manual fills gaps). <b>YoY</b> comparison pending 2025 lead-history import.';
- document.getElementById("foot").textContent="Range "+RANGE.from+" → "+RANGE.to+" · Channel "+CH+" · Rep "+OW+" · data refreshes with the 15-min Salesforce sync · ESB Command v2";
+ document.getElementById("paceDeals").textContent=(DATA.ytdClosed||[]).filter(e=>e.dt.startsWith(mo)).length;
+ if(OPEN)renderDetails();
 }
-function sortCh(i){chSort.dir=chSort.col===i?-chSort.dir:1;chSort.col=i;render()}
-function sortRep(i){repSort.dir=repSort.col===i?-repSort.dir:1;repSort.col=i;render()}
+
+function renderDetails(){
+ // by channel — simple
+ const chs=[...new Set(DATA.events.map(e=>e.channel))];
+ let t="<tr><th>Channel</th><th>Leads</th><th>Appts</th><th>Closed</th><th>Spend</th><th>ROAS</th></tr>";
+ chs.map(c=>{const {o:co,rev:cr}=counts(DATA.events.filter(e=>e.channel===c));const cs=spendIn(s=>s.channel===c);
+  return [c,co.gross,co.appt_attended,co.closed,cr,cs]}).sort((a,b)=>b[1]-a[1]).forEach(r=>{
+  t+="<tr><td>"+r[0]+"</td><td>"+fmt(r[1])+"</td><td>"+fmt(r[2])+"</td><td>"+fmt(r[3])+"</td><td>"+money(r[5])+"</td><td>"+(r[5]>0?(r[4]/r[5]).toFixed(1)+"x":"—")+"</td></tr>"});
+ document.getElementById("chTable").innerHTML=t;
+ // by rep
+ const reps=[...new Set(DATA.events.map(e=>e.owner).filter(x=>x&&x!=="Unknown"))];
+ let rt="<tr><th>Rep</th><th>Leads</th><th>Set</th><th>Attended</th></tr>";
+ reps.map(rp=>{const {o:ro}=counts(DATA.events.filter(e=>e.owner===rp));return [rp,ro.gross,ro.appt_set,ro.appt_attended]})
+  .sort((a,b)=>b[3]-a[3]).forEach(r=>{rt+="<tr><td>"+r[0]+"</td><td>"+fmt(r[1])+"</td><td>"+fmt(r[2])+"</td><td>"+fmt(r[3])+"</td></tr>"});
+ document.getElementById("repTable").innerHTML=reps.length?rt:"<tr><td class=muted>no rep activity</td></tr>";
+ // offers
+ const off=DATA.offers||[];const oa=off.map(x=>Number(x.offer)).filter(x=>x>0);
+ const acc=off.filter(x=>x.outcome==="accepted").length,lost=off.filter(x=>x.outcome==="lost").length,pend=off.filter(x=>x.outcome==="pending").length;
+ document.getElementById("offTable").innerHTML=
+  "<tr><td>Offers made</td><td>"+fmt(off.length)+"</td></tr>"
+  +"<tr><td>Win rate</td><td>"+(acc+lost?Math.round(100*acc/(acc+lost))+"%":"—")+"</td></tr>"
+  +"<tr><td>Avg offer</td><td>"+(oa.length?money(oa.reduce((a,b)=>a+b,0)/oa.length):"—")+"</td></tr>"
+  +"<tr><td>Accepted / Lost / Pending</td><td>"+acc+" / "+lost+" / "+pend+"</td></tr>";
+ // trend
+ const wk={};DATA.events.forEach(e=>{const d=new Date(e.dt);d.setDate(d.getDate()-((d.getDay()+6)%7));const w=iso(d);wk[w]=wk[w]||{};wk[w][e.stage]=(wk[w][e.stage]||0)+1});
+ const labels=Object.keys(wk).sort();
+ const mk=(s,c)=>({label:s,data:labels.map(l=>wk[l][s]||0),borderColor:c,backgroundColor:c,tension:.35,pointRadius:2});
+ if(trendChart)trendChart.destroy();
+ trendChart=new Chart(document.getElementById("trend"),{type:"line",data:{labels:labels.map(l=>l.slice(5)),datasets:[mk("gross","#22d3ee"),mk("appt_attended","#fbbf24"),mk("contract","#f87171")]},options:{plugins:{legend:{labels:{color:"#8294b5",boxWidth:10}}},scales:{x:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"}},y:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"},beginAtZero:true}}}});
+ // unmatched + note
+ document.getElementById("unmatched").innerHTML=DATA.unmatched.length?DATA.unmatched.map(u=>u.dt+" · "+u.title).join("<br>"):"All clean ✓";
+ const spSrc=[...new Set((DATA.spend||[]).map(s=>s.src))].join(" + ");
+ document.getElementById("note").innerHTML='<b>Notes:</b> Attended = scheduled appt in the past, not cancelled (proxy until SF tracks true attendance) · offers = opportunities with a logged offer · spend = '+spSrc+' · refreshes with the 15-min Salesforce sync.';
+}
 
 document.getElementById("presets").addEventListener("click",e=>{
  if(!e.target.dataset.p)return;
  document.querySelectorAll("#presets .chip").forEach(c=>c.classList.remove("on"));
  e.target.classList.add("on");RANGE=preset(e.target.dataset.p);load()});
-document.getElementById("channels").addEventListener("click",e=>{
- if(!e.target.dataset.c)return;
- document.querySelectorAll("#channels .chip").forEach(c=>c.classList.remove("on"));
- e.target.classList.add("on");CH=e.target.dataset.c;render()});
-document.getElementById("owners").addEventListener("click",e=>{
- if(!e.target.dataset.o)return;
- document.querySelectorAll("#owners .chip").forEach(c=>c.classList.remove("on"));
- e.target.classList.add("on");OW=e.target.dataset.o;render()});
-function customRange(){const a=document.getElementById("d1").value,b=document.getElementById("d2").value;if(a&&b){RANGE={from:a,to:b};document.querySelectorAll("#presets .chip").forEach(c=>c.classList.remove("on"));load()}}
 setInterval(()=>{if(PW&&DATA)load()},300000);
 if(PW)load();
 </script>
