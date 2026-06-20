@@ -118,13 +118,16 @@ canvas{max-height:220px}
 
 <script>
 // funnel stages, each with the named conversion to it (mirrors the Revenue Funnel sheet)
+// bench = industry benchmark % (from Joe's Lead Trackers sheet); shown beside the
+// live rate and coloring it red below / green at-or-above the benchmark.
 const STEPS=[
  {key:"gross",        label:"Gross Leads"},
- {key:"net",          label:"Net Leads",            conv:"Qualified Lead %"},
+ {key:"net",          label:"Net Leads",            conv:"Qualified Lead %",     bench:75},
  {key:"appt_set",     label:"Appointments Set",     conv:"Appointment Set %"},
  {key:"appt_attended",label:"Appointments Attended",conv:"Appointment Attended %"},
- {key:"offer",        label:"Offers Made",          conv:"Offer Made %"},
- {key:"closed",       label:"Closed",               conv:"Close Rate %"}
+ {key:"offer",        label:"Offers Made",          conv:"Offer Made %",         bench:100},
+ {key:"contract",     label:"Contracts",            conv:"Offer → Contract %",   bench:20},
+ {key:"closed",       label:"Closed",               conv:"Contract → Close %",   bench:80}
 ];
 let PW=sessionStorage.getItem("esbpw")||"";
 let DATA=null, RANGE=preset("mtd"), trendChart=null, OPEN=false;
@@ -172,8 +175,11 @@ function render(){
  let html="", prevW=100;
  STEPS.forEach((s,i)=>{
   const c=o[s.key]||0;
-  if(i>0){const prev=o[STEPS[i-1].key]||0;const pct=prev>0?Math.round(100*c/prev)+"%":"—";
-   html+='<div class="fstep">'+s.conv+' <b>'+pct+'</b></div>'}
+  if(i>0){const prev=o[STEPS[i-1].key]||0;const pv=prev>0?Math.round(100*c/prev):null;
+   const pct=pv===null?"—":pv+"%";
+   const col=(s.bench&&pv!==null)?(pv>=s.bench?"#34d399":"#f87171"):"#e6edf7";
+   const bt=s.bench?' <span style="color:#5b6b86;font-weight:400">vs '+s.bench+'% industry</span>':'';
+   html+='<div class="fstep">'+s.conv+' <b style="color:'+col+'">'+pct+'</b>'+bt+'</div>'}
   let w=Math.min(prevW, Math.max(16, 100*c/gross)); prevW=w;   // clamp so it always narrows (funnel shape)
   html+='<div class="fstage" style="width:'+w+'%"><div class="fbar"><span class="fc">'+fmt(c)+'</span><span class="fn">'+s.label+'</span></div></div>';
  });
@@ -218,7 +224,7 @@ function renderDetails(){
  trendChart=new Chart(document.getElementById("trend"),{type:"line",data:{labels:labels.map(l=>l.slice(5)),datasets:[mk("gross","#22d3ee"),mk("appt_attended","#fbbf24"),mk("closed","#34d399")]},options:{plugins:{legend:{labels:{color:"#8294b5",boxWidth:10}}},scales:{x:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"}},y:{ticks:{color:"#8294b5"},grid:{color:"#1f2c47"},beginAtZero:true}}}});
  document.getElementById("unmatched").innerHTML=DATA.unmatched.length?DATA.unmatched.map(u=>u.dt+" · "+u.title).join("<br>"):"All clean ✓";
  const spSrc=[...new Set((DATA.spend||[]).map(s=>s.src))].join(" + ");
- document.getElementById("note").innerHTML='<b>Notes:</b> conversions are period ratios (events in the range), so short ranges can read over 100% as appts catch up to earlier leads — they settle over quarter/year · Attended = scheduled appt in the past, not cancelled (proxy until SF tracks true attendance) · Offers made = opportunities with a logged offer · Spend = '+spSrc+' · refreshes with the 15-min Salesforce sync.';
+ document.getElementById("note").innerHTML='<b>Notes:</b> conversions are period ratios (events in the range), so short ranges can read over 100% as appts catch up to earlier leads — they settle over quarter/year · Attended = scheduled appt in the past, not cancelled (proxy until SF tracks true attendance) · Offers made = opportunities with a logged offer · <b>industry benchmarks</b> (from the Lead Trackers sheet) shown beside each conversion — green = at/above, red = below · Spend = '+spSrc+' · refreshes with the 15-min Salesforce sync.';
 }
 
 document.getElementById("presets").addEventListener("click",e=>{
