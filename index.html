@@ -54,7 +54,27 @@ tr:last-child td{border-bottom:none}
 #login input{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 16px;font-size:16px;width:260px;text-align:center}
 #login button{background:var(--cyan);color:#04222b;border:none;border-radius:10px;padding:12px 30px;font-size:15px;font-weight:700;cursor:pointer}
 canvas{max-height:220px}
-@media(max-width:860px){.top{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
+/* department cards */
+.dchips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.dchips .chip{padding:6px 13px;font-size:12.5px}
+.dtime{margin-left:auto}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.dtile{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:13px 14px;min-width:0}
+.dlbl{font-size:10.5px;color:var(--dim);font-weight:700;letter-spacing:.8px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.dbadge{font-size:8.5px;border:1px solid var(--line);border-radius:4px;padding:1px 4px;color:var(--dim);letter-spacing:.5px;font-weight:600}
+.drow{display:flex;align-items:baseline;gap:8px;margin-top:5px}
+.dval{font-size:27px;font-weight:800;line-height:1}
+.dval.ok{color:var(--green)}.dval.warn{color:var(--amber)}.dval.bad{color:var(--red)}
+.dchip{font-size:11px;font-weight:700;border-radius:6px;padding:2px 6px;background:var(--card);border:1px solid var(--line)}
+.dchip.good{color:var(--green)}.dchip.poor{color:var(--red)}.dchip.flat{color:var(--dim)}
+.dbar{position:relative;height:7px;background:var(--line);border-radius:99px;margin-top:9px;overflow:visible}
+.dbar i{display:block;height:100%;border-radius:99px;background:var(--dim)}
+.dbar i.ok{background:var(--green)}.dbar i.warn{background:var(--amber)}.dbar i.bad{background:var(--red)}
+.dbar b.tick{position:absolute;top:-3px;width:2px;height:13px;background:var(--text);opacity:.65;border-radius:1px}
+.dsub{font-size:11px;color:var(--dim);margin-top:7px;line-height:1.5}
+.dfoot{color:var(--dim);font-size:11px;margin-top:14px;line-height:1.6}
+.dcomp{color:var(--dim);font-size:11.5px;margin-bottom:12px}
+@media(max-width:860px){.top{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.dtime{margin-left:0}}
 </style>
 </head>
 <body>
@@ -83,6 +103,27 @@ canvas{max-height:220px}
 <div class="top" id="top"></div>
 
 <div class="card"><h3>The Funnel — lead to close</h3><div id="funnel"></div></div>
+
+<div class="card"><h3>Departments — process &amp; performance</h3>
+  <div class="dchips">
+    <div id="deptPick" style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="chip on" data-d="mktg">Marketing</div>
+      <div class="chip" data-d="lm">Lead Mgmt</div>
+      <div class="chip" data-d="acq">Acquisitions</div>
+      <div class="chip" data-d="dispo">Dispo</div>
+    </div>
+    <div id="deptTime" class="dtime" style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="chip" data-w="today">Today</div>
+      <div class="chip" data-w="yday">Yesterday</div>
+      <div class="chip on" data-w="wtd">This Week</div>
+      <div class="chip" data-w="lastwk">Last Week</div>
+      <div class="chip" data-w="mtd">This Month</div>
+    </div>
+  </div>
+  <div class="dcomp" id="deptComp"></div>
+  <div class="dgrid" id="deptGrid"></div>
+  <div class="dfoot" id="deptFoot"></div>
+</div>
 
 <div class="card"><h3>$1M Revenue Pace</h3>
   <div class="pacewrap">
@@ -113,7 +154,7 @@ canvas{max-height:220px}
     <div class="note" id="note"></div>
   </div>
 </div>
-<div class="muted" style="text-align:right;margin-top:12px">ESB Command · v4 · live off the 15-min Salesforce sync</div>
+<div class="muted" style="text-align:right;margin-top:12px">ESB Command · v5 (departments) · live off the 15-min Salesforce sync</div>
 </div>
 
 <script>
@@ -195,6 +236,7 @@ function render(){
  document.getElementById("paceBar").style.width=Math.min(100,100*ytdRev/Math.max(paceTarget,1))+"%";
  const mo=new Date().toISOString().slice(0,7);
  document.getElementById("paceDeals").textContent=(DATA.ytdClosed||[]).filter(e=>e.dt.startsWith(mo)).length;
+ renderDepts();
  if(OPEN)renderDetails();
 }
 
@@ -226,6 +268,164 @@ function renderDetails(){
  const spSrc=[...new Set((DATA.spend||[]).map(s=>s.src))].join(" + ");
  document.getElementById("note").innerHTML='<b>Notes:</b> conversions are period ratios (events in the range), so short ranges can read over 100% as appts catch up to earlier leads — they settle over quarter/year · Attended = scheduled appt in the past, not cancelled (proxy until SF tracks true attendance) · Offers made = opportunities with a logged offer · <b>industry benchmarks</b> (from the Lead Trackers sheet) shown beside each conversion — green = at/above, red = below · Spend = '+spSrc+' · refreshes with the 15-min Salesforce sync.';
 }
+
+// ═══ DEPARTMENT CARDS ═══════════════════════════════════════════════════
+// Targets derive from the locked Phase-1 model (3 deals/mo backward chain:
+// 63 gross → 25 net → 19 set → 19 attended → 19 offers → 4 contracts → 3 closed)
+// + Joe's locked activity numbers (50 seller dials/day, 25 buyer dials/day,
+// 5 new buyers/wk). Conversion standards from the Lead Trackers sheet.
+// Pace = pro-rated target over BUSINESS days elapsed (weekends expect 0).
+// Trend chips compare like-for-like: week-to-date vs last week to the same
+// weekday; month-to-date vs last month to the same day number.
+let DEPT="mktg", DWIN="wtd";
+
+function dIso(d){const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)}
+function dAdd(iso,n){const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return dIso(d)}
+function isBiz(iso){const g=new Date(iso+"T12:00:00").getDay();return g>=1&&g<=5}
+function bizBetween(a,b){let n=0;for(let d=a;d<=b;d=dAdd(d,1))if(isBiz(d))n++;return n}
+function bizInMonth(iso){const y=+iso.slice(0,4),m=+iso.slice(5,7);let n=0;const dm=new Date(y,m,0).getDate();
+ for(let i=1;i<=dm;i++){const g=new Date(y,m-1,i).getDay();if(g>=1&&g<=5)n++}return n}
+function dayFrac(){const h=new Date().getHours()+new Date().getMinutes()/60;return Math.min(1,Math.max(.1,(h-8)/10))}
+function monday(iso){let d=iso;while(new Date(d+"T12:00:00").getDay()!==1)d=dAdd(d,-1);return d}
+
+// window → {from,to,fullBiz,elapsedBiz,prior:{from,to}|null,label}
+function deptWindow(w){
+ const today=dIso(new Date());
+ if(w==="today")return{from:today,to:today,fullBiz:isBiz(today)?1:0,
+  elapsedBiz:isBiz(today)?dayFrac():0,prior:null,label:"today so far · no comparison (partial day)"};
+ if(w==="yday"){const y=dAdd(today,-1);const p=dAdd(today,-2);
+  return{from:y,to:y,fullBiz:isBiz(y)?1:0,elapsedBiz:isBiz(y)?1:0,
+   prior:{from:p,to:p},label:"yesterday vs the day before"}}
+ if(w==="wtd"){const mon=monday(today);const off=Math.round((new Date(today+"T12:00:00")-new Date(mon+"T12:00:00"))/864e5);
+  const pm=dAdd(mon,-7);
+  const eb=(today>mon?bizBetween(mon,dAdd(today,-1)):0)+(isBiz(today)?dayFrac():0);
+  return{from:mon,to:today,fullBiz:5,elapsedBiz:eb,
+   prior:{from:pm,to:dAdd(pm,off)},label:"this week (Mon–now) vs last week to the same point"}}
+ if(w==="lastwk"){const mon=dAdd(monday(today),-7);
+  return{from:mon,to:dAdd(mon,6),fullBiz:5,elapsedBiz:5,
+   prior:{from:dAdd(mon,-7),to:dAdd(mon,-1)},label:"last week (full) vs the week before"}}
+ // mtd
+ const first=today.slice(0,8)+"01";
+ const dayN=+today.slice(8,10);
+ const pf=dAdd(first,-1).slice(0,8)+"01";
+ const pfEnd=pf.slice(0,8)+String(Math.min(dayN,new Date(+pf.slice(0,4),+pf.slice(5,7),0).getDate())).padStart(2,"0");
+ const eb=(today>first?bizBetween(first,dAdd(today,-1)):0)+(isBiz(today)?dayFrac():0);
+ return{from:first,to:today,fullBiz:bizInMonth(today),elapsedBiz:eb,
+  prior:{from:pf,to:pfEnd},label:"this month vs last month to day "+dayN};
+}
+
+// series accessors over the trailing-100-day dept payload
+function actSum(key,from,to){return (DATA.activity||[]).filter(r=>r.dt>=from&&r.dt<=to).reduce((a,r)=>a+Number(r[key]||0),0)}
+function sellerDials(from,to){return (DATA.activity||[]).filter(r=>r.dt>=from&&r.dt<=to).reduce((a,r)=>a+Number(r.dials||0)-Number(r.buyer_dials||0),0)}
+function evCount(stage,from,to){return (DATA.deptEvents||[]).filter(e=>e.stage===stage&&e.dt>=from&&e.dt<=to).length}
+function offCount(from,to){return (DATA.deptOffers||[]).filter(o=>o.dt>=from&&o.dt<=to).length}
+function nbCount(from,to){return (DATA.newBuyers||[]).filter(r=>r.dt>=from&&r.dt<=to).reduce((a,r)=>a+Number(r.cnt||0),0)}
+function spendWindow(from,to){ // monthly spend pro-rated across that month's business days
+ let s=0;const by={};(DATA.spend||[]).forEach(r=>{by[r.ym]=(by[r.ym]||0)+Number(r.spend||0)});
+ for(const ym in by){const mFirst=ym+"-01";const mLast=ym+"-"+String(new Date(+ym.slice(0,4),+ym.slice(5,7),0).getDate()).padStart(2,"0");
+  const f=from>mFirst?from:mFirst, t=to<mLast?to:mLast;
+  if(f<=t)s+=by[ym]*bizBetween(f,t)/Math.max(bizInMonth(mFirst),1)}
+ return s}
+
+// tile targets: perBiz (× biz days) or fixed per window {day,week,month}; null = neutral (informational)
+const MO_BIZ=()=>bizInMonth(dIso(new Date()));
+const DEPT_DEF={
+ mktg:{tiles:[
+  {n:"New Leads",badge:"ACTIVITY",val:(f,t)=>evCount("gross",f,t),tgt:{today:null,yday:null,wtd:15,lastwk:15,mtd:63},good:"up"},
+  {n:"Marketing Spend",badge:"ACTIVITY",money:1,val:(f,t)=>spendWindow(f,t),tgt:null,good:null},
+  {n:"Cost / Lead",badge:"RESULT",money:1,cpl:1,tgt:null,good:"down",note:"floor — spend capture incomplete"},
+ ],foot:"Leads = gross Homeowner leads created. Spend is recorded monthly and pro-rated across business days for day/week views — treat CPL as a floor until per-channel spend capture is complete. Targets: 63 leads/mo (Phase-1 model), CPL ≤ $100 (2026 blended)."},
+ lm:{tiles:[
+  {n:"Seller Dials",badge:"ACTIVITY",val:sellerDials,perBiz:50,good:"up"},
+  {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
+  {n:"Appts Attended",badge:"RESULT",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
+  {n:"Set → Attended",rate:1,num:(f,t)=>evCount("appt_attended",f,t),den:(f,t)=>evCount("appt_set",f,t),std:80,good:"up"},
+ ],foot:"Dials = outbound calls from the smrtPhone log, buyer calls excluded. Target 50 seller dials per business day (Joe, 7/15). Appointment targets from the Phase-1 chain (19 set + attended/mo). Set→Attended standard 80% (CG: book 12 to run 10)."},
+ acq:{tiles:[
+  {n:"Appts Attended",badge:"ACTIVITY",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
+  {n:"Offers Made",badge:"ACTIVITY",val:offCount,tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
+  {n:"Attended → Offer",rate:1,num:offCount,den:(f,t)=>evCount("appt_attended",f,t),std:100,good:"up"},
+  {n:"Attended → Contract",rate:1,num:(f,t)=>evCount("contract",f,t),den:(f,t)=>evCount("appt_attended",f,t),std:20,good:"up"},
+  {n:"Contracts",badge:"RESULT",val:(f,t)=>evCount("contract",f,t),tgt:{today:null,yday:null,wtd:1,lastwk:1,mtd:4},good:"up"},
+ ],foot:"Make the offer every time — 100% attended→offer is the rule. Attended→contract standard 20% (industry); contracts target 4/mo → 3 closings. Offer dates fall back to deal-created when Offer_Made_Date is blank."},
+ dispo:{tiles:[
+  {n:"Buyer Dials",badge:"ACTIVITY",val:(f,t)=>actSum("buyer_dials",f,t),perBiz:25,good:"up"},
+  {n:"New Buyers Qualified",badge:"RESULT",val:nbCount,tgt:{today:null,yday:null,wtd:5,lastwk:5,mtd:22},good:"up"},
+  {n:"Contract → Close",rate:1,num:(f,t)=>evCount("closed",f,t),den:(f,t)=>evCount("contract",f,t),std:80,good:"up",always90:1},
+ ],foot:"Buyer dials matched by phone against Cash Buyers, Buyer Prospects and legacy Buyer records. Targets: 25 buyer dials/business day, 5 new buyers qualified/week (Joe, 7/15) — promotions stamp from 7/15 on, buyers added since 7/10 count. Contract→Close judged on a trailing 90 days (too few contracts for weekly reads), standard 80%."},
+};
+
+function statusOf(v,pace){if(pace===null||pace<=0)return"none";if(v>=pace)return"ok";if(v>=.8*pace)return"warn";return"bad"}
+function rateStatus(v,std,dir){if(v===null)return"none";
+ if(dir==="down")return v<=std?"ok":(v<=std*1.15?"warn":"bad");
+ return v>=std?"ok":(v>=std*.85?"warn":"bad")}
+function chipFor(cur,prior,good){
+ if(prior===null||prior===undefined)return"";
+ if(prior===0&&cur===0)return'<span class="dchip flat">·</span>';
+ if(prior===0)return'<span class="dchip '+(good==="down"?"poor":"good")+'">new</span>';
+ const pct=Math.round(100*(cur-prior)/prior);
+ if(pct===0)return'<span class="dchip flat">= prior</span>';
+ const up=pct>0,arrow=up?"▲":"▼";
+ const isGood=(good==="down")?!up:up;
+ return'<span class="dchip '+(isGood?"good":"poor")+'">'+arrow+" "+Math.abs(pct)+"%</span>"}
+
+function renderDepts(){
+ if(!DATA||!DATA.activity){document.getElementById("deptGrid").innerHTML='<div class="muted">department data not available — refresh in a minute</div>';return}
+ const W=deptWindow(DWIN);
+ const def=DEPT_DEF[DEPT];
+ document.getElementById("deptComp").textContent=W.label+"  ·  "+W.from+(W.to!==W.from?" → "+W.to:"");
+ let html="";
+ def.tiles.forEach(tl=>{
+  if(tl.rate){ // conversion tile, falls back to a longer window when too thin
+   const today=dIso(new Date());
+   let f=W.from,t=W.to,basis="";
+   if(tl.always90){f=dAdd(today,-89);t=today;basis="trailing 90d"}
+   let den=tl.den(f,t),num=tl.num(f,t);
+   if(!tl.always90&&den<4){f=dAdd(today,-29);t=today;den=tl.den(f,t);num=tl.num(f,t);basis="trailing 30d"}
+   if(den<4&&!tl.always90){f=dAdd(today,-89);t=today;den=tl.den(f,t);num=tl.num(f,t);basis="trailing 90d"}
+   const rate=den>0?Math.round(100*num/den):null;
+   const st=den>0?rateStatus(rate,tl.std,tl.good):"none";
+   html+='<div class="dtile"><div class="dlbl">'+tl.n+' <span class="dbadge">RATE</span></div>'
+    +'<div class="drow"><span class="dval '+(st==="none"?"":st)+'">'+(rate===null?"—":rate+"%")+'</span></div>'
+    +'<div class="dsub">'+(den>0?num+" of "+den:"no data")+" · std "+tl.std+"%"+(basis?" · "+basis:"")+'</div></div>';
+   return}
+  const v=tl.cpl?(()=>{const sp=spendWindow(W.from,W.to),g=evCount("gross",W.from,W.to);return g>0?sp/g:null})():tl.val(W.from,W.to);
+  let target=null;
+  if(tl.perBiz)target=W.fullBiz>0?tl.perBiz*W.fullBiz:null;
+  else if(tl.tgt)target=tl.tgt[DWIN];
+  const pace=target===null?null:(tl.perBiz?tl.perBiz*W.elapsedBiz:target*(W.fullBiz>0?W.elapsedBiz/W.fullBiz:0));
+  const st=(v===null)?"none":(tl.good==="down"
+    ?(pace===null?"none":(v<=target?"ok":(v<=target*1.15?"warn":"bad")))
+    :statusOf(v,pace));
+  const prior=(W.prior&&v!==null&&!tl.cpl)?(tl.val?tl.val(W.prior.from,W.prior.to):null):null;
+  const disp=v===null?"—":(tl.money?money(v):fmt(Math.round(v)));
+  let bar="";
+  if(target&&!tl.money&&v!==null){
+   const wpct=Math.min(100,100*v/target),tick=Math.min(100,100*(pace/target));
+   bar='<div class="dbar"><i class="'+st+'" style="width:'+wpct+'%"></i><b class="tick" style="left:'+tick+'%"></b></div>'}
+  let sub="";
+  if(target!==null){
+   sub="target "+(tl.money?"≤ "+money(target):fmt(Math.round(target)));
+   if(pace!==null&&!tl.money&&Math.round(pace)<Math.round(target))sub+=" · pace "+fmt(Math.round(pace));
+   if(st==="ok")sub+=" · on track";else if(st==="warn")sub+=" · slightly behind";else if(st==="bad")sub+=" · behind";}
+  else sub="informational";
+  if(tl.note)sub+=" · "+tl.note;
+  html+='<div class="dtile"><div class="dlbl">'+tl.n+(tl.badge?' <span class="dbadge">'+tl.badge+"</span>":"")+'</div>'
+   +'<div class="drow"><span class="dval '+(st==="none"?"":st)+'">'+disp+'</span>'+chipFor(v,prior,tl.good)+'</div>'
+   +bar+'<div class="dsub">'+sub+'</div></div>';
+ });
+ document.getElementById("deptGrid").innerHTML=html;
+ document.getElementById("deptFoot").innerHTML=def.foot+" · Colors judge pace (pro-rated target for the elapsed business days) — tick = where you should be now.";
+}
+
+document.getElementById("deptPick").addEventListener("click",e=>{
+ if(!e.target.dataset.d)return;
+ document.querySelectorAll("#deptPick .chip").forEach(c=>c.classList.remove("on"));
+ e.target.classList.add("on");DEPT=e.target.dataset.d;renderDepts()});
+document.getElementById("deptTime").addEventListener("click",e=>{
+ if(!e.target.dataset.w)return;
+ document.querySelectorAll("#deptTime .chip").forEach(c=>c.classList.remove("on"));
+ e.target.classList.add("on");DWIN=e.target.dataset.w;renderDepts()});
 
 document.getElementById("presets").addEventListener("click",e=>{
  if(!e.target.dataset.p)return;
