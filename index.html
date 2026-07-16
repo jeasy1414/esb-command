@@ -122,6 +122,7 @@ canvas{max-height:220px}
   </div>
   <div class="dcomp" id="deptComp"></div>
   <div class="dgrid" id="deptGrid"></div>
+  <div id="deptExtra" style="margin-top:14px"></div>
   <div class="dfoot" id="deptFoot"></div>
 </div>
 
@@ -317,11 +318,11 @@ function deptWindow(w){
 // series accessors over the trailing-100-day dept payload
 function actSum(key,from,to){return (DATA.activity||[]).filter(r=>r.dt>=from&&r.dt<=to).reduce((a,r)=>a+Number(r[key]||0),0)}
 function sellerDials(from,to){return (DATA.activity||[]).filter(r=>r.dt>=from&&r.dt<=to).reduce((a,r)=>a+Number(r.dials||0)-Number(r.buyer_dials||0),0)}
-function evCount(stage,from,to){return (DATA.deptEvents||[]).filter(e=>e.stage===stage&&e.dt>=from&&e.dt<=to).length}
+function evCount(stage,from,to,ch){return (DATA.deptEvents||[]).filter(e=>e.stage===stage&&e.dt>=from&&e.dt<=to&&(!ch||e.channel===ch)).length}
 function offCount(from,to){return (DATA.deptOffers||[]).filter(o=>o.dt>=from&&o.dt<=to).length}
 function nbCount(from,to){return (DATA.newBuyers||[]).filter(r=>r.dt>=from&&r.dt<=to).reduce((a,r)=>a+Number(r.cnt||0),0)}
-function spendWindow(from,to){ // monthly spend pro-rated across that month's business days
- let s=0;const by={};(DATA.spend||[]).forEach(r=>{by[r.ym]=(by[r.ym]||0)+Number(r.spend||0)});
+function spendWindow(from,to,ch){ // monthly spend pro-rated across that month's business days
+ let s=0;const by={};(DATA.spend||[]).forEach(r=>{if(ch&&r.channel!==ch)return;by[r.ym]=(by[r.ym]||0)+Number(r.spend||0)});
  for(const ym in by){const mFirst=ym+"-01";const mLast=ym+"-"+String(new Date(+ym.slice(0,4),+ym.slice(5,7),0).getDate()).padStart(2,"0");
   const f=from>mFirst?from:mFirst, t=to<mLast?to:mLast;
   if(f<=t)s+=by[ym]*bizBetween(f,t)/Math.max(bizInMonth(mFirst),1)}
@@ -334,7 +335,7 @@ const DEPT_DEF={
   {n:"New Leads",badge:"ACTIVITY",val:(f,t)=>evCount("gross",f,t),tgt:{today:null,yday:null,wtd:15,lastwk:15,mtd:63},good:"up"},
   {n:"Marketing Spend",badge:"ACTIVITY",money:1,val:(f,t)=>spendWindow(f,t),tgt:null,good:null},
   {n:"Cost / Lead",badge:"RESULT",money:1,cpl:1,tgt:null,good:"down",note:"floor — spend capture incomplete"},
- ],foot:"Leads = gross Homeowner leads created. Spend is recorded monthly and pro-rated across business days for day/week views — treat CPL as a floor until per-channel spend capture is complete. Targets: 63 leads/mo (Phase-1 model), CPL ≤ $100 (2026 blended)."},
+ ],foot:"Leads = gross Homeowner leads created; Qualified = converted to opp (net). $/Qualified = spend ÷ qualified leads. Spend is recorded monthly and pro-rated across business days for day/week views — treat CPL as a floor until per-channel spend capture is complete (July: Facebook only). Targets: 63 leads/mo (Phase-1 model)."},
  lm:{tiles:[
   {n:"Seller Dials",badge:"ACTIVITY",val:sellerDials,perBiz:50,good:"up"},
   {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
@@ -415,7 +416,31 @@ function renderDepts(){
    +bar+'<div class="dsub">'+sub+'</div></div>';
  });
  document.getElementById("deptGrid").innerHTML=html;
+ document.getElementById("deptExtra").innerHTML=DEPT==="mktg"?channelTable(W):"";
  document.getElementById("deptFoot").innerHTML=def.foot+" · Colors judge pace (pro-rated target for the elapsed business days) — tick = where you should be now.";
+}
+
+// per-channel breakdown for the Marketing card — leads, qualified, spend, $/lead, $/qualified
+function channelTable(W){
+ const evs=(DATA.deptEvents||[]).filter(e=>e.dt>=W.from&&e.dt<=W.to);
+ const chs=new Set(evs.map(e=>e.channel).filter(Boolean));
+ (DATA.spend||[]).forEach(r=>{if(spendWindow(W.from,W.to,r.channel)>0)chs.add(r.channel)});
+ if(!chs.size)return'<div class="muted">no channel activity in this window</div>';
+ const rows=[...chs].map(c=>{
+  const gross=evCount("gross",W.from,W.to,c),net=evCount("net",W.from,W.to,c),sp=spendWindow(W.from,W.to,c);
+  const pg=W.prior?evCount("gross",W.prior.from,W.prior.to,c):null;
+  return{c,gross,net,sp,pg}}).filter(r=>r.gross>0||r.net>0||r.sp>0)
+  .sort((a,b)=>b.gross-a.gross||b.sp-a.sp);
+ const tg=rows.reduce((a,r)=>a+r.gross,0),tn=rows.reduce((a,r)=>a+r.net,0),ts=rows.reduce((a,r)=>a+r.sp,0);
+ let t='<table><tr><th>Channel</th><th>Leads</th><th>Qualified</th><th>Spend</th><th>$/Lead</th><th>$/Qualified</th></tr>';
+ rows.forEach(r=>{
+  t+="<tr><td>"+r.c+(W.prior?" "+chipFor(r.gross,r.pg,"up"):"")+"</td><td>"+fmt(r.gross)+"</td><td>"+fmt(r.net)+"</td>"
+   +"<td>"+(r.sp>0?money(r.sp):"—")+"</td>"
+   +"<td>"+(r.sp>0&&r.gross>0?money(r.sp/r.gross):"—")+"</td>"
+   +"<td>"+(r.sp>0&&r.net>0?money(r.sp/r.net):"—")+"</td></tr>"});
+ t+='<tr style="font-weight:700"><td>Total</td><td>'+fmt(tg)+"</td><td>"+fmt(tn)+"</td><td>"+(ts>0?money(ts):"—")
+  +"</td><td>"+(ts>0&&tg>0?money(ts/tg):"—")+"</td><td>"+(ts>0&&tn>0?money(ts/tn):"—")+"</td></tr></table>";
+ return t;
 }
 
 document.getElementById("deptPick").addEventListener("click",e=>{
