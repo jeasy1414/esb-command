@@ -335,7 +335,7 @@ const DEPT_DEF={
   {n:"New Leads",badge:"ACTIVITY",val:(f,t)=>evCount("gross",f,t),tgt:{today:null,yday:null,wtd:15,lastwk:15,mtd:63},good:"up"},
   {n:"Marketing Spend",badge:"ACTIVITY",money:1,val:(f,t)=>spendWindow(f,t),tgt:null,good:null},
   {n:"Cost / Lead",badge:"RESULT",money:1,cpl:1,tgt:null,good:"down",note:"floor — spend capture incomplete"},
- ],foot:"Leads = gross Homeowner leads created; Qualified = converted to opp (net). $/Qualified = spend ÷ qualified leads. Spend is recorded monthly and pro-rated across business days for day/week views — treat CPL as a floor until per-channel spend capture is complete (July: Facebook only). Targets: 63 leads/mo (Phase-1 model)."},
+ ],foot:"Leads = gross Homeowner leads created; Qualified = converted to opp (net). $/Qualified = spend ÷ qualified leads. Spend by month, pro-rated across business days for day/week views. Captured: Facebook (Meta API, nightly) · Property Leads (per-lead delivery emails) · REI Print (order totals, booked to drop month). NOT yet captured: Google/PPC, Direct One mail, TV — their CPL reads blank, and blended CPL is a floor. Targets: 63 leads/mo (Phase-1 model)."},
  lm:{tiles:[
   {n:"Seller Dials",badge:"ACTIVITY",val:sellerDials,perBiz:50,good:"up"},
   {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
