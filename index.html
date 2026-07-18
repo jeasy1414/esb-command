@@ -188,7 +188,8 @@ function preset(p){const now=new Date();const t=iso(now);let f;
 const LBL={today:"Today",wtd:"This week",mtd:"This month",30:"Last 30 days",qtd:"This quarter",ytd:"Year to date"};
 
 async function load(){
- const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
+ const ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2anhncnF0cXhzeGlwcWVpaGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDE0MDAsImV4cCI6MjA5MTc3NzQwMH0.JSeDKLenj0trpZGl38EPUEDWRpGmmIc6cORfVBipbAk"; // public anon key — auth is the password, checked server-side
+ const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data",{method:"POST",headers:{"Content-Type":"application/json","apikey":ANON,"Authorization":"Bearer "+ANON},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
  if(r.status===401){sessionStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent="Wrong password";return}
  DATA=await r.json();
  document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";
@@ -321,6 +322,30 @@ function sellerDials(from,to){return (DATA.activity||[]).filter(r=>r.dt>=from&&r
 function evCount(stage,from,to,ch){return (DATA.deptEvents||[]).filter(e=>e.stage===stage&&e.dt>=from&&e.dt<=to&&(!ch||e.channel===ch)).length}
 function offCount(from,to){return (DATA.deptOffers||[]).filter(o=>o.dt>=from&&o.dt<=to).length}
 function nbCount(from,to){return (DATA.newBuyers||[]).filter(r=>r.dt>=from&&r.dt<=to).reduce((a,r)=>a+Number(r.cnt||0),0)}
+function cbaCount(from,to){return (DATA.cashBuyerAppts||[]).filter(r=>r.dt>=from&&r.dt<=to).length}
+let CBA_OPEN=false;
+function toggleCBA(){CBA_OPEN=!CBA_OPEN;renderDepts()}
+function shortAddr(s){return (s||"?").split(",")[0].trim()}
+// Cash Buyer Appts drilldown — every OPEN deal, appts in window, days on dispo.
+// Zero-appt deals are the point: which inventory is getting attention, which isn't.
+function cbaTable(W){
+ const today=dIso(new Date());
+ const appts=(DATA.cashBuyerAppts||[]).filter(r=>r.dt>=W.from&&r.dt<=W.to);
+ const byDeal={};appts.forEach(a=>{const k=a.txn_sf_id||a.deal||"?";(byDeal[k]=byDeal[k]||[]).push(a)});
+ const rows=(DATA.openDeals||[]).map(d=>{
+  const list=byDeal[d.sf_id]||[];
+  const days=Math.round((new Date(today+"T12:00:00")-new Date(d.signed+"T12:00:00"))/864e5);
+  return{deal:shortAddr(d.deal)+(d.hold==="owned"?" (owned)":""),days,n:list.length,
+   who:list.map(a=>a.buyer+(a.interest?" ("+a.interest+"/5)":"")).join(", ")}})
+  .sort((a,b)=>a.n-b.n||b.days-a.days);
+ // appts on deals that closed/cancelled since still count in the window
+ Object.keys(byDeal).forEach(k=>{if(!(DATA.openDeals||[]).some(d=>d.sf_id===k)){
+  const list=byDeal[k];rows.push({deal:shortAddr(list[0].deal)+" (resolved)",days:null,n:list.length,
+   who:list.map(a=>a.buyer).join(", ")})}});
+ if(!rows.length)return'<div class="muted">no open deals</div>';
+ let h='<table class="tbl"><tr><th>Deal</th><th>Days on dispo</th><th>Appts</th><th>Shown to</th></tr>';
+ rows.forEach(r=>{h+='<tr><td>'+(r.n===0?"⚠️ ":"")+r.deal+'</td><td>'+(r.days===null?"—":r.days)+'</td><td>'+r.n+'</td><td class="muted">'+(r.who||"—")+'</td></tr>'});
+ return h+'</table><div class="muted" style="margin-top:4px">⚠️ = no cash buyer appts in this window. Source: "New Cash Buyer Appt" button on the Transaction — unlogged showings don\'t exist.</div>'}
 function spendWindow(from,to,ch){ // monthly spend pro-rated across that month's business days
  let s=0;const by={};(DATA.spend||[]).forEach(r=>{if(ch&&r.channel!==ch)return;by[r.ym]=(by[r.ym]||0)+Number(r.spend||0)});
  for(const ym in by){const mFirst=ym+"-01";const mLast=ym+"-"+String(new Date(+ym.slice(0,4),+ym.slice(5,7),0).getDate()).padStart(2,"0");
@@ -351,9 +376,10 @@ const DEPT_DEF={
  ],foot:"Make the offer every time — 100% attended→offer is the rule. Attended→contract standard 20% (industry); contracts target 4/mo → 3 closings. Offer dates fall back to deal-created when Offer_Made_Date is blank."},
  dispo:{tiles:[
   {n:"Buyer Dials",badge:"ACTIVITY",val:(f,t)=>actSum("buyer_dials",f,t),perBiz:25,good:"up"},
+  {n:"Cash Buyer Appts",badge:"ACTIVITY",val:cbaCount,tgt:null,good:"up",click:"toggleCBA()",note:"click for per-deal breakdown"},
   {n:"New Buyers Qualified",badge:"RESULT",val:nbCount,tgt:{today:null,yday:null,wtd:5,lastwk:5,mtd:22},good:"up"},
-  {n:"Contract → Close",rate:1,num:(f,t)=>evCount("closed",f,t),den:(f,t)=>evCount("contract",f,t),std:80,good:"up",always90:1},
- ],foot:"Buyer dials matched by phone against Cash Buyers, Buyer Prospects and legacy Buyer records. Targets: 25 buyer dials/business day, 5 new buyers qualified/week (Joe, 7/15) — promotions stamp from 7/15 on, buyers added since 7/10 count. Contract→Close judged on a trailing 90 days (too few contracts for weekly reads), standard 80%."},
+  {n:"Contract → Close",rate:1,num:(f,t)=>evCount("closed",f,t),den:(f,t)=>evCount("contract",f,t),std:80,good:"up",always90:1,monthOnly:1},
+ ],foot:"Buyer dials matched by phone against Cash Buyers, Buyer Prospects and legacy Buyer records. Cash Buyer Appts = showings logged with the \"New Cash Buyer Appt\" button on the Transaction (tracker live 7/17; no target yet — watching a few weeks first). Click it to see which deals are getting attention and which aren't. Targets: 25 buyer dials/business day, 5 new buyers qualified/week (Joe, 7/15). Contract→Close = outcome metric, shown on the Month view only (trailing 90d, standard 80%)."},
 };
 
 function statusOf(v,pace){if(pace===null||pace<=0)return"none";if(v>=pace)return"ok";if(v>=.8*pace)return"warn";return"bad"}
@@ -377,6 +403,7 @@ function renderDepts(){
  document.getElementById("deptComp").textContent=W.label+"  ·  "+W.from+(W.to!==W.from?" → "+W.to:"");
  let html="";
  def.tiles.forEach(tl=>{
+  if(tl.monthOnly&&DWIN!=="mtd")return; // outcome ratios live on the Month view only (Joe, 7/18)
   if(tl.rate){ // conversion tile, falls back to a longer window when too thin
    const today=dIso(new Date());
    let f=W.from,t=W.to,basis="";
@@ -411,12 +438,12 @@ function renderDepts(){
    if(st==="ok")sub+=" · on track";else if(st==="warn")sub+=" · slightly behind";else if(st==="bad")sub+=" · behind";}
   else sub="informational";
   if(tl.note)sub+=" · "+tl.note;
-  html+='<div class="dtile"><div class="dlbl">'+tl.n+(tl.badge?' <span class="dbadge">'+tl.badge+"</span>":"")+'</div>'
+  html+='<div class="dtile"'+(tl.click?' style="cursor:pointer" onclick="'+tl.click+'" title="click for per-deal breakdown"':'')+'><div class="dlbl">'+tl.n+(tl.badge?' <span class="dbadge">'+tl.badge+"</span>":"")+'</div>'
    +'<div class="drow"><span class="dval '+(st==="none"?"":st)+'">'+disp+'</span>'+chipFor(v,prior,tl.good)+'</div>'
    +bar+'<div class="dsub">'+sub+'</div></div>';
  });
  document.getElementById("deptGrid").innerHTML=html;
- document.getElementById("deptExtra").innerHTML=DEPT==="mktg"?channelTable(W):"";
+ document.getElementById("deptExtra").innerHTML=DEPT==="mktg"?channelTable(W):(DEPT==="dispo"&&CBA_OPEN?cbaTable(W):"");
  document.getElementById("deptFoot").innerHTML=def.foot+" · Colors judge pace (pro-rated target for the elapsed business days) — tick = where you should be now.";
 }
 
