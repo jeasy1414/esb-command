@@ -325,6 +325,25 @@ function nbCount(from,to){return (DATA.newBuyers||[]).filter(r=>r.dt>=from&&r.dt
 function cbaCount(from,to){return (DATA.cashBuyerAppts||[]).filter(r=>r.dt>=from&&r.dt<=to).length}
 let CBA_OPEN=false;
 function toggleCBA(){CBA_OPEN=!CBA_OPEN;renderDepts()}
+// Per-record drilldowns: Appts Attended / Offers Made / Contracts (Joe, 7/20)
+let DRILL=null;
+const DRILLS={acq:["attended","offers","contract"],lm:["attended"]};
+function toggleDrill(k){DRILL=DRILL===k?null:k;renderDepts()}
+function cleanEvLabel(s){const p=(s||"").split(",").map(t=>t.trim()).filter(Boolean);return p.slice(0,2).join(", ")||"?"}
+function drillTable(W){
+ const dfmt=d=>d.slice(5).replace("-","/");
+ if(DRILL==="offers"){
+  const rows=(DATA.deptOffers||[]).filter(o=>o.dt>=W.from&&o.dt<=W.to).sort((a,b)=>a.dt<b.dt?1:-1);
+  if(!rows.length)return '<div class="muted">no offers in this window</div>';
+  let h='<table class="tbl"><tr><th>Date</th><th>Deal</th><th>Offer</th><th>Status</th><th>Owner</th></tr>';
+  rows.forEach(r=>{h+='<tr><td>'+dfmt(r.dt)+'</td><td>'+(r.label||"?")+'</td><td>'+money(Number(r.offer||0))+'</td><td>'+(r.outcome||"—")+'</td><td class="muted">'+(r.owner||"—")+'</td></tr>'});
+  return h+'</table><div class="muted" style="margin-top:4px">Last offer made on each deal; status = where the deal stands now (accepted = went to contract).</div>'}
+ const stage=DRILL==="contract"?"contract":"appt_attended";
+ const rows=(DATA.deptEvents||[]).filter(e=>e.stage===stage&&e.dt>=W.from&&e.dt<=W.to).sort((a,b)=>a.dt<b.dt?1:-1);
+ if(!rows.length)return '<div class="muted">none in this window</div>';
+ let h='<table class="tbl"><tr><th>Date</th><th>'+(DRILL==="contract"?"Property":"Appointment")+'</th><th>Channel</th></tr>';
+ rows.forEach(r=>{h+='<tr><td>'+dfmt(r.dt)+'</td><td>'+(DRILL==="contract"?cleanEvLabel(r.label):(r.label||"?").trim())+'</td><td class="muted">'+(r.channel&&r.channel!=="Unknown"?r.channel:"—")+'</td></tr>'});
+ return h+'</table>'}
 function shortAddr(s){return (s||"?").split(",")[0].trim()}
 // Cash Buyer Appts drilldown — every OPEN deal, appts in window, days on dispo.
 // Zero-appt deals are the point: which inventory is getting attention, which isn't.
@@ -364,15 +383,15 @@ const DEPT_DEF={
  lm:{tiles:[
   {n:"Seller Dials",badge:"ACTIVITY",val:sellerDials,perBiz:50,good:"up"},
   {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
-  {n:"Appts Attended",badge:"RESULT",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
+  {n:"Appts Attended",badge:"RESULT",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up",click:"toggleDrill('attended')",note:"click to list them"},
   {n:"Set → Attended",rate:1,num:(f,t)=>evCount("appt_attended",f,t),den:(f,t)=>evCount("appt_set",f,t),std:80,good:"up"},
  ],foot:"Dials = outbound calls from the smrtPhone log, buyer calls excluded. Target 50 seller dials per business day (Joe, 7/15). Appointment targets from the Phase-1 chain (19 set + attended/mo). Set→Attended standard 80% (CG: book 12 to run 10)."},
  acq:{tiles:[
-  {n:"Appts Attended",badge:"ACTIVITY",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
-  {n:"Offers Made",badge:"ACTIVITY",val:offCount,tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
+  {n:"Appts Attended",badge:"ACTIVITY",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up",click:"toggleDrill('attended')",note:"click to list them"},
+  {n:"Offers Made",badge:"ACTIVITY",val:offCount,tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up",click:"toggleDrill('offers')",note:"click to list them"},
   {n:"Attended → Offer",rate:1,num:offCount,den:(f,t)=>evCount("appt_attended",f,t),std:100,good:"up"},
   {n:"Attended → Contract",rate:1,num:(f,t)=>evCount("contract",f,t),den:(f,t)=>evCount("appt_attended",f,t),std:20,good:"up"},
-  {n:"Contracts",badge:"RESULT",val:(f,t)=>evCount("contract",f,t),tgt:{today:null,yday:null,wtd:1,lastwk:1,mtd:4},good:"up"},
+  {n:"Contracts",badge:"RESULT",val:(f,t)=>evCount("contract",f,t),tgt:{today:null,yday:null,wtd:1,lastwk:1,mtd:4},good:"up",click:"toggleDrill('contract')",note:"click to list them"},
  ],foot:"Make the offer every time — 100% attended→offer is the rule. Attended→contract standard 20% (industry); contracts target 4/mo → 3 closings. Offer dates fall back to deal-created when Offer_Made_Date is blank."},
  dispo:{tiles:[
   {n:"Buyer Dials",badge:"ACTIVITY",val:(f,t)=>actSum("buyer_dials",f,t),perBiz:25,good:"up"},
@@ -443,7 +462,7 @@ function renderDepts(){
    +bar+'<div class="dsub">'+sub+'</div></div>';
  });
  document.getElementById("deptGrid").innerHTML=html;
- document.getElementById("deptExtra").innerHTML=DEPT==="mktg"?channelTable(W):(DEPT==="dispo"&&CBA_OPEN?cbaTable(W):"");
+ document.getElementById("deptExtra").innerHTML=DEPT==="mktg"?channelTable(W):(DEPT==="dispo"&&CBA_OPEN?cbaTable(W):((DRILLS[DEPT]||[]).includes(DRILL)?drillTable(W):""));
  document.getElementById("deptFoot").innerHTML=def.foot+" · Colors judge pace (pro-rated target for the elapsed business days) — tick = where you should be now.";
 }
 
