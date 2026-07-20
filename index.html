@@ -118,6 +118,7 @@ canvas{max-height:220px}
       <div class="chip on" data-w="wtd">This Week</div>
       <div class="chip" data-w="lastwk">Last Week</div>
       <div class="chip" data-w="mtd">This Month</div>
+      <div class="chip" data-w="lastmo">Last Month</div>
     </div>
   </div>
   <div class="dcomp" id="deptComp"></div>
@@ -306,6 +307,10 @@ function deptWindow(w){
  if(w==="lastwk"){const mon=dAdd(monday(today),-7);
   return{from:mon,to:dAdd(mon,6),fullBiz:5,elapsedBiz:5,
    prior:{from:dAdd(mon,-7),to:dAdd(mon,-1)},label:"last week (full) vs the week before"}}
+ if(w==="lastmo"){const first=today.slice(0,8)+"01";const lmFirst=dAdd(first,-1).slice(0,8)+"01";const lmLast=dAdd(first,-1);
+  const pmFirst=dAdd(lmFirst,-1).slice(0,8)+"01";
+  return{from:lmFirst,to:lmLast,fullBiz:bizInMonth(lmFirst),elapsedBiz:bizInMonth(lmFirst),
+   prior:{from:pmFirst,to:dAdd(lmFirst,-1)},label:"last month (full) vs the month before"}}
  // mtd
  const first=today.slice(0,8)+"01";
  const dayN=+today.slice(8,10);
@@ -376,27 +381,27 @@ function spendWindow(from,to,ch){ // monthly spend pro-rated across that month's
 const MO_BIZ=()=>bizInMonth(dIso(new Date()));
 const DEPT_DEF={
  mktg:{tiles:[
-  {n:"New Leads",badge:"ACTIVITY",val:(f,t)=>evCount("gross",f,t),tgt:{today:null,yday:null,wtd:15,lastwk:15,mtd:63},good:"up"},
+  {n:"New Leads",badge:"ACTIVITY",val:(f,t)=>evCount("gross",f,t),tgt:{today:null,yday:null,wtd:15,lastwk:15,mtd:63,lastmo:63},good:"up"},
   {n:"Marketing Spend",badge:"ACTIVITY",money:1,val:(f,t)=>spendWindow(f,t),tgt:null,good:null},
   {n:"Cost / Lead",badge:"RESULT",money:1,cpl:1,tgt:null,good:"down",note:"floor — spend capture incomplete"},
  ],foot:"Leads = gross Homeowner leads created; Qualified = converted to opp (net). $/Qualified = spend ÷ qualified leads. Spend by month, pro-rated across business days for day/week views. Captured: Facebook (Meta API, nightly) · Property Leads (per-lead delivery emails) · REI Print (order totals, booked to drop month). NOT yet captured: Google/PPC, Direct One mail, TV — their CPL reads blank, and blended CPL is a floor. Targets: 63 leads/mo (Phase-1 model)."},
  lm:{tiles:[
   {n:"Seller Dials",badge:"ACTIVITY",val:sellerDials,perBiz:50,good:"up"},
-  {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up"},
-  {n:"Appts Attended",badge:"RESULT",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up",click:"toggleDrill('attended')",note:"click to list them"},
+  {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19,lastmo:19},good:"up"},
+  {n:"Appts Attended",badge:"RESULT",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19,lastmo:19},good:"up",click:"toggleDrill('attended')",note:"click to list them"},
   {n:"Set → Attended",rate:1,num:(f,t)=>evCount("appt_attended",f,t),den:(f,t)=>evCount("appt_set",f,t),std:80,good:"up"},
  ],foot:"Dials = outbound calls from the smrtPhone log, buyer calls excluded. Target 50 seller dials per business day (Joe, 7/15). Appointment targets from the Phase-1 chain (19 set + attended/mo). Set→Attended standard 80% (CG: book 12 to run 10)."},
  acq:{tiles:[
-  {n:"Appts Attended",badge:"ACTIVITY",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up",click:"toggleDrill('attended')",note:"click to list them"},
-  {n:"Offers Made",badge:"ACTIVITY",val:offCount,tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19},good:"up",click:"toggleDrill('offers')",note:"click to list them"},
+  {n:"Appts Attended",badge:"ACTIVITY",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19,lastmo:19},good:"up",click:"toggleDrill('attended')",note:"click to list them"},
+  {n:"Offers Made",badge:"ACTIVITY",val:offCount,tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19,lastmo:19},good:"up",click:"toggleDrill('offers')",note:"click to list them"},
   {n:"Attended → Offer",rate:1,num:offCount,den:(f,t)=>evCount("appt_attended",f,t),std:100,good:"up"},
   {n:"Attended → Contract",rate:1,num:(f,t)=>evCount("contract",f,t),den:(f,t)=>evCount("appt_attended",f,t),std:20,good:"up"},
-  {n:"Contracts",badge:"RESULT",val:(f,t)=>evCount("contract",f,t),tgt:{today:null,yday:null,wtd:1,lastwk:1,mtd:4},good:"up",click:"toggleDrill('contract')",note:"click to list them"},
+  {n:"Contracts",badge:"RESULT",val:(f,t)=>evCount("contract",f,t),tgt:{today:null,yday:null,wtd:1,lastwk:1,mtd:4,lastmo:4},good:"up",click:"toggleDrill('contract')",note:"click to list them"},
  ],foot:"Make the offer every time — 100% attended→offer is the rule. Attended→contract standard 20% (industry); contracts target 4/mo → 3 closings. Offer dates fall back to deal-created when Offer_Made_Date is blank."},
  dispo:{tiles:[
   {n:"Buyer Dials",badge:"ACTIVITY",val:(f,t)=>actSum("buyer_dials",f,t),perBiz:25,good:"up"},
   {n:"Cash Buyer Appts",badge:"ACTIVITY",val:cbaCount,tgt:null,good:"up",click:"toggleCBA()",note:"click for per-deal breakdown"},
-  {n:"New Buyers Qualified",badge:"RESULT",val:nbCount,tgt:{today:null,yday:null,wtd:5,lastwk:5,mtd:22},good:"up"},
+  {n:"New Buyers Qualified",badge:"RESULT",val:nbCount,tgt:{today:null,yday:null,wtd:5,lastwk:5,mtd:22,lastmo:22},good:"up"},
   {n:"Contract → Close",rate:1,num:(f,t)=>evCount("closed",f,t),den:(f,t)=>evCount("contract",f,t),std:80,good:"up",always90:1,monthOnly:1},
  ],foot:"Buyer dials matched by phone against Cash Buyers, Buyer Prospects and legacy Buyer records. Cash Buyer Appts = showings logged with the \"New Cash Buyer Appt\" button on the Transaction (tracker live 7/17; no target yet — watching a few weeks first). Click it to see which deals are getting attention and which aren't. Targets: 25 buyer dials/business day, 5 new buyers qualified/week (Joe, 7/15). Contract→Close = outcome metric, shown on the Month view only (trailing 90d, standard 80%)."},
 };
@@ -422,7 +427,7 @@ function renderDepts(){
  document.getElementById("deptComp").textContent=W.label+"  ·  "+W.from+(W.to!==W.from?" → "+W.to:"");
  let html="";
  def.tiles.forEach(tl=>{
-  if(tl.monthOnly&&DWIN!=="mtd")return; // outcome ratios live on the Month view only (Joe, 7/18)
+  if(tl.monthOnly&&DWIN!=="mtd"&&DWIN!=="lastmo")return; // outcome ratios live on the Month view only (Joe, 7/18)
   if(tl.rate){ // conversion tile, falls back to a longer window when too thin
    const today=dIso(new Date());
    let f=W.from,t=W.to,basis="";
