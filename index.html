@@ -171,7 +171,7 @@ const STEPS=[
  {key:"contract",     label:"Contracts",            conv:"Offer → Contract %",   bench:20},
  {key:"closed",       label:"Closed",               conv:"Contract → Close %",   bench:80}
 ];
-let PW=sessionStorage.getItem("esbpw")||"";
+let PW=localStorage.getItem("esbpw")||sessionStorage.getItem("esbpw")||"";
 let DATA=null, RANGE=preset("mtd"), trendChart=null, OPEN=false;
 
 function fmt(n){return (n||0).toLocaleString()}
@@ -190,12 +190,12 @@ const LBL={today:"Today",wtd:"This week",mtd:"This month",30:"Last 30 days",qtd:
 async function load(){
  const ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2anhncnF0cXhzeGlwcWVpaGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDE0MDAsImV4cCI6MjA5MTc3NzQwMH0.JSeDKLenj0trpZGl38EPUEDWRpGmmIc6cORfVBipbAk"; // public anon key — auth is the password, checked server-side
  const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data",{method:"POST",headers:{"Content-Type":"application/json","apikey":ANON,"Authorization":"Bearer "+ANON},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
- if(r.status===401){sessionStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent="Wrong password";return}
+ if(r.status===401){localStorage.removeItem("esbpw");sessionStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent="Wrong password";return}
  DATA=await r.json();
  document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";
  render();
 }
-function go(){PW=document.getElementById("pw").value;sessionStorage.setItem("esbpw",PW);load()}
+function go(){PW=document.getElementById("pw").value;localStorage.setItem("esbpw",PW);load()}
 function toggleDetails(){OPEN=!OPEN;document.getElementById("details").style.display=OPEN?"block":"none";
  document.getElementById("toggle").textContent=(OPEN?"▴ Hide":"▾ Show")+" breakdowns";if(OPEN)renderDetails()}
 
