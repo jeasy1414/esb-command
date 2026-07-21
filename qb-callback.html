@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Connecting QuickBooks…</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 60px 20px; color: #1a1a2e; }
+  code { background: #f0f0f5; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>Finishing QuickBooks connection…</h1>
+<p id="msg">Handing off to the local connector.</p>
+<script>
+  // Relay Intuit's OAuth callback (code, state, realmId) to the local token-exchange server.
+  var qs = window.location.search;
+  if (qs && qs.indexOf("code=") !== -1) {
+    window.location.replace("http://localhost:8080/callback" + qs);
+  } else {
+    document.getElementById("msg").textContent =
+      "No authorization data found. Close this tab and re-run the connect script.";
+  }
+</script>
+</body>
+</html>
