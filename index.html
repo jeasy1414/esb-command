@@ -202,7 +202,14 @@ function toggleDetails(){OPEN=!OPEN;document.getElementById("details").style.dis
 
 function counts(evts){const o={};STEPS.forEach(s=>o[s.key]=0);let rev=0;
  evts.forEach(e=>{if(o[e.stage]!==undefined)o[e.stage]++;if(e.stage==="closed"&&e.amount)rev+=Number(e.amount)});return {o,rev}}
-function spendIn(fn){return (DATA.spend||[]).filter(s=>s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)&&fn(s)).reduce((a,s)=>a+Number(s.spend||0),0)}
+// Channels with per-unit daily rows (Property Leads delivery emails) get EXACT
+// window sums; their monthly rows are skipped so nothing double-counts.
+function dailyChannels(){return new Set((DATA.spendDaily||[]).map(r=>r.channel))}
+function dailySpend(from,to,ch){return (DATA.spendDaily||[]).filter(r=>r.dt>=from&&r.dt<=to&&(!ch||r.channel===ch)).reduce((a,r)=>a+Number(r.amount||0),0)}
+function spendIn(fn){const daily=dailyChannels();
+ const m=(DATA.spend||[]).filter(s=>!daily.has(s.channel)&&s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)&&fn(s)).reduce((a,s)=>a+Number(s.spend||0),0);
+ const d=(DATA.spendDaily||[]).filter(r=>r.dt>=RANGE.from&&r.dt<=RANGE.to&&fn({ym:r.dt.slice(0,7),channel:r.channel,spend:r.amount})).reduce((a,r)=>a+Number(r.amount||0),0);
+ return m+d}
 
 function render(){
  const {o,rev}=counts(DATA.events);
@@ -370,8 +377,11 @@ function cbaTable(W){
  let h='<table class="tbl"><tr><th>Deal</th><th>Days on dispo</th><th>Appts</th><th>Shown to</th></tr>';
  rows.forEach(r=>{h+='<tr><td>'+(r.n===0?"⚠️ ":"")+r.deal+'</td><td>'+(r.days===null?"—":r.days)+'</td><td>'+r.n+'</td><td class="muted">'+(r.who||"—")+'</td></tr>'});
  return h+'</table><div class="muted" style="margin-top:4px">⚠️ = no cash buyer appts in this window. Source: "New Cash Buyer Appt" button on the Transaction — unlogged showings don\'t exist.</div>'}
-function spendWindow(from,to,ch){ // monthly spend pro-rated across that month's business days
- let s=0;const by={};(DATA.spend||[]).forEach(r=>{if(ch&&r.channel!==ch)return;by[r.ym]=(by[r.ym]||0)+Number(r.spend||0)});
+function spendWindow(from,to,ch){ // exact daily rows where captured (PPL); else monthly pro-rated across business days
+ const daily=dailyChannels();
+ if(ch&&daily.has(ch))return dailySpend(from,to,ch);
+ let s=ch?0:dailySpend(from,to,null);
+ const by={};(DATA.spend||[]).forEach(r=>{if(ch&&r.channel!==ch)return;if(daily.has(r.channel))return;by[r.ym]=(by[r.ym]||0)+Number(r.spend||0)});
  for(const ym in by){const mFirst=ym+"-01";const mLast=ym+"-"+String(new Date(+ym.slice(0,4),+ym.slice(5,7),0).getDate()).padStart(2,"0");
   const f=from>mFirst?from:mFirst, t=to<mLast?to:mLast;
   if(f<=t)s+=by[ym]*bizBetween(f,t)/Math.max(bizInMonth(mFirst),1)}
@@ -384,7 +394,7 @@ const DEPT_DEF={
   {n:"New Leads",badge:"ACTIVITY",val:(f,t)=>evCount("gross",f,t),tgt:{today:null,yday:null,wtd:15,lastwk:15,mtd:63,lastmo:63},good:"up"},
   {n:"Marketing Spend",badge:"ACTIVITY",money:1,val:(f,t)=>spendWindow(f,t),tgt:null,good:null},
   {n:"Cost / Lead",badge:"RESULT",money:1,cpl:1,tgt:null,good:"down",note:"floor — spend capture incomplete"},
- ],foot:"Leads = gross Homeowner leads created; Qualified = converted to opp (net). $/Qualified = spend ÷ qualified leads. Spend by month, pro-rated across business days for day/week views. Captured: Facebook (Meta API, nightly) · Property Leads (per-lead delivery emails) · REI Print (order totals, booked to drop month). NOT yet captured: Google/PPC, Direct One mail, TV — their CPL reads blank, and blended CPL is a floor. Targets: 63 leads/mo (Phase-1 model)."},
+ ],foot:"Leads = gross Homeowner leads created; Qualified = converted to opp (net). $/Qualified = spend ÷ qualified leads. Spend by month, pro-rated across business days for day/week views. Captured: Facebook (Meta API, nightly) · Property Leads (EXACT per-lead by delivery date, from the delivery emails — not pro-rated) · REI Print (order totals, booked to drop month). NOT yet captured: Google/PPC, Direct One mail, TV — their CPL reads blank, and blended CPL is a floor. Targets: 63 leads/mo (Phase-1 model)."},
  lm:{tiles:[
   {n:"Seller Dials",badge:"ACTIVITY",val:sellerDials,perBiz:50,good:"up"},
   {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19,lastmo:19},good:"up"},
