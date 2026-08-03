@@ -339,11 +339,25 @@ let CBA_OPEN=false;
 function toggleCBA(){CBA_OPEN=!CBA_OPEN;renderDepts()}
 // Per-record drilldowns: Appts Attended / Offers Made / Contracts (Joe, 7/20)
 let DRILL=null;
-const DRILLS={acq:["attended","offers","contract"],lm:["attended"]};
+const DRILLS={acq:["attended","offers","contract"],lm:["set","attended"]};
 function toggleDrill(k){DRILL=DRILL===k?null:k;renderDepts()}
 function cleanEvLabel(s){const p=(s||"").split(",").map(t=>t.trim()).filter(Boolean);return p.slice(0,2).join(", ")||"?"}
 function drillTable(W){
  const dfmt=d=>d.slice(5).replace("-","/");
+ if(DRILL==="set"){ // appts SET in the window, each marked attended / not attended / upcoming (Joe 8/3)
+  const today=dIso(new Date());
+  const att=(DATA.deptEvents||[]).filter(e=>e.stage==="appt_attended");
+  const rows=(DATA.apptsSet||[]).filter(a=>a.set_dt>=W.from&&a.set_dt<=W.to).sort((a,b)=>a.set_dt<b.set_dt?1:-1);
+  if(!rows.length)return '<div class="muted">no appts set in this window</div>';
+  let h='<table class="tbl"><tr><th>Set</th><th>Appt date</th><th>Appointment</th><th>Outcome</th><th>Channel</th></tr>';
+  rows.forEach(r=>{
+   let out;
+   if(r.status==="cancelled")out='cancelled';
+   else if(att.some(e=>e.ref===String(r.deal_id)&&e.label===r.title&&e.dt===r.dt))out='✓ attended';
+   else if(r.dt>today)out='upcoming';
+   else out='⚠️ not attended';
+   h+='<tr><td>'+dfmt(r.set_dt)+'</td><td>'+dfmt(r.dt)+'</td><td>'+(r.title||"?").trim()+'</td><td>'+out+'</td><td class="muted">'+(r.channel&&r.channel!=="Unknown"?r.channel:"—")+'</td></tr>'});
+  return h+'</table><div class="muted" style="margin-top:4px">Attended = the Appt-Notes stamp on the Opp (from 7/18). Upcoming = appt date still in the future.</div>'}
  if(DRILL==="offers"){
   const rows=(DATA.deptOffers||[]).filter(o=>o.dt>=W.from&&o.dt<=W.to).sort((a,b)=>a.dt<b.dt?1:-1);
   if(!rows.length)return '<div class="muted">no offers in this window</div>';
@@ -397,7 +411,7 @@ const DEPT_DEF={
  ],foot:"Leads = gross Homeowner leads created; Qualified = converted to opp (net). $/Qualified = spend ÷ qualified leads. Spend by month, pro-rated across business days for day/week views. Captured: Facebook (Meta API, nightly) · Property Leads (EXACT per-lead by delivery date, from the delivery emails — not pro-rated) · REI Print (order totals, booked to drop month). NOT yet captured: Google/PPC, Direct One mail, TV — their CPL reads blank, and blended CPL is a floor. Targets: 63 leads/mo (Phase-1 model)."},
  lm:{tiles:[
   {n:"Seller Dials",badge:"ACTIVITY",val:sellerDials,perBiz:50,good:"up"},
-  {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19,lastmo:19},good:"up"},
+  {n:"Appts Set",badge:"RESULT",val:(f,t)=>evCount("appt_set",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19,lastmo:19},good:"up",click:"toggleDrill('set')",note:"click to list them"},
   {n:"Appts Attended",badge:"RESULT",val:(f,t)=>evCount("appt_attended",f,t),tgt:{today:null,yday:null,wtd:4,lastwk:4,mtd:19,lastmo:19},good:"up",click:"toggleDrill('attended')",note:"click to list them"},
   {n:"Set → Attended",rate:1,num:(f,t)=>evCount("appt_attended",f,t),den:(f,t)=>evCount("appt_set",f,t),std:80,good:"up"},
  ],foot:"Dials = outbound calls from the smrtPhone log, buyer calls excluded. Target 50 seller dials per business day (Joe, 7/15). Appointment targets from the Phase-1 chain (19 set + attended/mo). Set→Attended standard 80% (CG: book 12 to run 10)."},
@@ -438,18 +452,20 @@ function renderDepts(){
  let html="";
  def.tiles.forEach(tl=>{
   if(tl.monthOnly&&DWIN!=="mtd"&&DWIN!=="lastmo")return; // outcome ratios live on the Month view only (Joe, 7/18)
-  if(tl.rate){ // conversion tile, falls back to a longer window when too thin
+  if(tl.rate){ // conversion tile — headline is ALWAYS the selected window (Joe 8/3); trailing 30d only as sub-line reference when the window is thin
    const today=dIso(new Date());
    let f=W.from,t=W.to,basis="";
    if(tl.always90){f=dAdd(today,-89);t=today;basis="trailing 90d"}
-   let den=tl.den(f,t),num=tl.num(f,t);
-   if(!tl.always90&&den<4){f=dAdd(today,-29);t=today;den=tl.den(f,t);num=tl.num(f,t);basis="trailing 30d"}
-   if(den<4&&!tl.always90){f=dAdd(today,-89);t=today;den=tl.den(f,t);num=tl.num(f,t);basis="trailing 90d"}
+   const den=tl.den(f,t),num=tl.num(f,t);
    const rate=den>0?Math.round(100*num/den):null;
    const st=den>0?rateStatus(rate,tl.std,tl.good):"none";
+   let ref="";
+   if(!tl.always90&&den<4){
+    const rf=dAdd(today,-29),rden=tl.den(rf,today),rnum=tl.num(rf,today);
+    if(rden>0)ref=" · 30d: "+Math.round(100*rnum/rden)+"% ("+rnum+" of "+rden+")"}
    html+='<div class="dtile"><div class="dlbl">'+tl.n+' <span class="dbadge">RATE</span></div>'
     +'<div class="drow"><span class="dval '+(st==="none"?"":st)+'">'+(rate===null?"—":rate+"%")+'</span></div>'
-    +'<div class="dsub">'+(den>0?num+" of "+den:"no data")+" · std "+tl.std+"%"+(basis?" · "+basis:"")+'</div></div>';
+    +'<div class="dsub">'+num+" of "+den+" · std "+tl.std+"%"+(basis?" · "+basis:"")+ref+'</div></div>';
    return}
   const v=tl.cpl?(()=>{const sp=spendWindow(W.from,W.to),g=evCount("gross",W.from,W.to);return g>0?sp/g:null})():tl.val(W.from,W.to);
   let target=null;
