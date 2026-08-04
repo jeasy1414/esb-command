@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CFO Standup — Easy Street Buyers</title>
+<style>
+:root{--bg:#0c1220;--card:#141d31;--line:#1f2c47;--text:#e8eefb;--dim:#8294b5;--cyan:#22d3ee;--green:#34d399;--red:#f87171;--amber:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,'Segoe UI',Inter,sans-serif;padding:20px 16px;max-width:680px;margin:0 auto}
+.hdr{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px}
+.logo .house{width:32px;height:32px;background:var(--cyan);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#04222b;font-size:17px}
+.logo small{display:block;font-size:10px;font-weight:600;color:var(--dim);letter-spacing:2px}
+.spacer{flex:1}
+a.back{color:var(--dim);font-size:13px;text-decoration:none}
+.sub{color:var(--dim);font-size:12.5px;margin-bottom:18px}
+.count{color:var(--amber);font-weight:700}
+.item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.item .meta{display:flex;gap:10px;font-size:11.5px;color:var(--dim);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px;flex-wrap:wrap}
+.item .amt{font-size:20px;font-weight:800}
+.item .amt.in{color:var(--green)}
+.item .amt.out{color:var(--red)}
+.item .desc{font-size:14.5px;margin:6px 0 4px}
+.item .sugg{font-size:12.5px;color:var(--cyan);margin-bottom:12px}
+.opts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.opt{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:8px 14px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600}
+.opt.sel{background:var(--cyan);color:#04222b;border-color:var(--cyan)}
+.noterow{display:flex;gap:8px}
+.noterow input{flex:1;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 12px;font-size:14px;min-width:0}
+.send{background:var(--green);color:#04222b;border:none;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:800;cursor:pointer}
+.send:disabled{opacity:.35;cursor:default}
+.done{background:rgba(52,211,153,.1);border-color:var(--green)}
+.done .decided{color:var(--green);font-size:13px;font-weight:700;margin-top:4px}
+.undo{background:none;border:none;color:var(--dim);font-size:12px;cursor:pointer;text-decoration:underline;margin-top:6px;padding:0}
+.sect{font-size:12px;color:var(--dim);letter-spacing:1.4px;text-transform:uppercase;font-weight:700;margin:22px 0 12px}
+.empty{background:var(--card);border:1px solid var(--green);border-radius:14px;padding:26px;text-align:center;color:var(--green);font-weight:700;font-size:16px}
+.empty small{display:block;color:var(--dim);font-weight:400;font-size:12.5px;margin-top:6px}
+#login{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:50}
+#login input{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 16px;font-size:16px;width:260px;text-align:center}
+#login button{background:var(--cyan);color:#04222b;border:none;border-radius:10px;padding:12px 30px;font-size:15px;font-weight:700;cursor:pointer}
+#loginerr{color:var(--red);font-size:13px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#04222b;font-weight:800;border-radius:99px;padding:10px 22px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="logo"><div class="house">⌂</div><div>CFO Standup<small>EASY STREET BUYERS</small></div></div>
+  <div class="spacer"></div>
+  <a class="back" href="index.html">← Dashboard</a>
+</div>
+<div class="sub" id="sub">Loading…</div>
+<div id="list"></div>
+<div id="login"><div class="logo"><div class="house">⌂</div><div>CFO Standup</div></div>
+  <input id="pw" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')go()">
+  <button onclick="go()">Enter</button><div id="loginerr"></div></div>
+<div class="toast" id="toast">Sent to Claude ✓</div>
+
+<script>
+const ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2anhncnF0cXhzeGlwcWVpaGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDE0MDAsImV4cCI6MjA5MTc3NzQwMH0.JSeDKLenj0trpZGl38EPUEDWRpGmmIc6cORfVBipbAk";
+const FN="https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/cfo-standup";
+let PW=localStorage.getItem("esbpw")||"";
+let ITEMS=[], SEL={};
+
+async function api(route, body){
+  const r=await fetch(FN+"/"+route,{method:"POST",headers:{"Content-Type":"application/json","apikey":ANON,"Authorization":"Bearer "+ANON},body:JSON.stringify({password:PW,...body})});
+  if(r.status===401){localStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent=PW?"Wrong password":"";throw new Error("auth")}
+  return r.json();
+}
+function go(){PW=document.getElementById("pw").value;localStorage.setItem("esbpw",PW);document.getElementById("login").style.display="none";load()}
+function money(n){return n==null?"":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2})}
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function render(pending, recent){
+  const sub=document.getElementById("sub");
+  sub.innerHTML = pending.length
+    ? `<span class="count">${pending.length}</span> item${pending.length>1?"s":""} need your call — tap an answer (add a note if it says "note"), hit Send. Claude books same-day.`
+    : "";
+  let h="";
+  if(!pending.length) h+=`<div class="empty">All caught up ✓<small>Nothing needs your ruling. New charges land here as they hit Chase.</small></div>`;
+  for(const it of pending){
+    const opts=(it.options||[]).map((o,i)=>`<div class="opt" data-id="${it.id}" data-i="${i}" onclick="pick(${it.id},${i})">${esc(o)}</div>`).join("");
+    h+=`<div class="item" id="it${it.id}">
+      <div class="meta"><span>${it.item_date||""}</span><span>${esc(it.account||"")}</span>${it.amount!=null?`<span class="amt ${it.direction||""}">${it.direction==="in"?"+":it.direction==="out"?"−":""}${money(it.amount)}</span>`:""}</div>
+      <div class="desc">${esc(it.description)}</div>
+      ${it.suggested?`<div class="sugg">Claude: ${esc(it.suggested)}</div>`:""}
+      <div class="opts">${opts}</div>
+      <div class="noterow"><input id="note${it.id}" placeholder="Note (deal name, who, details…)" onkeydown="if(event.key==='Enter')send(${it.id})"><button class="send" id="send${it.id}" onclick="send(${it.id})" disabled>Send</button></div>
+    </div>`;
+  }
+  if(recent && recent.length){
+    h+=`<div class="sect">Recently answered</div>`;
+    for(const it of recent){
+      h+=`<div class="item done"><div class="meta"><span>${it.item_date||""}</span><span>${esc(it.account||"")}</span>${it.amount!=null?`<span class="amt">${money(it.amount)}</span>`:""}</div>
+        <div class="desc">${esc(it.description)}</div>
+        <div class="decided">→ ${esc(it.decision||"")}${it.decision_note?" — "+esc(it.decision_note):""} ${it.status==="booked"?"· booked ✓":"· Claude will book"}</div>
+        ${it.status==="decided"?`<button class="undo" onclick="undo(${it.id})">undo</button>`:""}</div>`;
+    }
+  }
+  document.getElementById("list").innerHTML=h;
+}
+
+function pick(id,i){
+  SEL[id]=i;
+  document.querySelectorAll(`#it${id} .opt`).forEach(el=>el.classList.toggle("sel", +el.dataset.i===i));
+  document.getElementById("send"+id).disabled=false;
+}
+async function send(id){
+  const it=ITEMS.find(x=>x.id===id);
+  const note=document.getElementById("note"+id).value.trim();
+  const decision=SEL[id]!=null?(it.options||[])[SEL[id]]:null;
+  if(!decision&&!note)return;
+  const btn=document.getElementById("send"+id); btn.disabled=true; btn.textContent="…";
+  const r=await api("decide",{id,decision,note});
+  if(r.ok){toast();load()}else{btn.textContent="Send";btn.disabled=false;alert(r.error||"failed")}
+}
+async function undo(id){await api("undo",{id});load()}
+function toast(){const t=document.getElementById("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600)}
+
+async function load(){
+  try{
+    const d=await api("list",{});
+    ITEMS=d.pending||[]; SEL={};
+    render(d.pending||[], d.recent||[]);
+  }catch(e){}
+}
+if(!PW){document.getElementById("login").style.display="flex"}else{load()}
+</script>
+</body>
+</html>
