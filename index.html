@@ -174,6 +174,10 @@ const STEPS=[
  {key:"closed",       label:"Closed",               conv:"Contract → Close %",   bench:80}
 ];
 let PW=localStorage.getItem("esbpw")||sessionStorage.getItem("esbpw")||"";
+// Desktop app passes the password via URL fragment (never sent to any server);
+// accept it, store it for this profile, then scrub it from the address bar.
+const _hpw=new URLSearchParams(location.hash.slice(1)).get("pw");
+if(_hpw){PW=_hpw;localStorage.setItem("esbpw",PW);history.replaceState(null,"",location.pathname+location.search);}
 let DATA=null, RANGE=preset("mtd"), trendChart=null, OPEN=false;
 
 function fmt(n){return (n||0).toLocaleString()}
