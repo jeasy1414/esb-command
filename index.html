@@ -543,8 +543,7 @@ function payingTable(){
   if(r.spend<=0)return['free','no spend booked'];
   if(r.closed>=r.spend)return['good','PAYING — '+(r.closed/r.spend).toFixed(1)+'x back'];
   if(r.closed+r.pend>=r.spend)return['wait','LIKELY — pays if pending closes'];
-  if(r.pendN>0&&r.pendUnk===r.pendN)return['wait','UNKNOWN — pending $ not entered'];
-  return['poor','NOT PAYING — '+money(r.spend-r.closed-r.pend)+' short'];};
+  return['poor','NOT PAYING — '+money(r.spend-r.closed-r.pend)+' short'+(r.pendUnk?' · '+r.pendUnk+' open deal'+(r.pendUnk>1?'s':'')+' with no $ entered':'')];};
  let t='<div class="paytitle">Is each channel paying? <span class="muted">— '+yr+' year to date</span></div>';
  t+='<table class="tbl paytbl"><tr><th>Channel</th><th>Spent</th><th>Closed $</th><th>Pending $</th><th>Verdict</th></tr>';
  list.forEach(r=>{const [k,v]=verdict(r);
