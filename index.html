@@ -198,6 +198,7 @@ async function load(){
  const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data",{method:"POST",headers:{"Content-Type":"application/json","apikey":ANON,"Authorization":"Bearer "+ANON},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
  if(r.status===401){localStorage.removeItem("esbpw");sessionStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent="Wrong password";return}
  DATA=await r.json();
+ if(!r.ok||DATA.error){const m=document.getElementById("loginerr");document.getElementById("login").style.display="flex";m.textContent="Data load failed ("+r.status+"): "+(DATA.error||"server error")+" — click Enter to retry";return}
  document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";
  render();
 }
