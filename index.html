@@ -75,6 +75,11 @@ canvas{max-height:220px}
 .dfoot{color:var(--dim);font-size:11px;margin-top:14px;line-height:1.6}
 .dcomp{color:var(--dim);font-size:11.5px;margin-bottom:12px}
 @media(max-width:860px){.top{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.dtime{margin-left:0}}
+.chdrill{background:none;border:1px solid var(--line,#334);color:inherit;font:inherit;padding:1px 8px;border-radius:6px;cursor:pointer;text-decoration:underline dotted}
+.chdrill:hover,.chdrill.on{background:rgba(120,160,255,.15);border-color:#7aa2ff}
+.chdrillhead{margin:10px 0 4px;display:flex;gap:10px;align-items:center}
+.roas.good{color:#4ade80;font-weight:700}.roas.poor{color:#f87171;font-weight:700}.roas.wait{color:#fbbf24}
+.chtbl td,.chtbl th{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -503,28 +508,59 @@ function renderDepts(){
  document.getElementById("deptFoot").innerHTML=def.foot+" · Colors judge pace (pro-rated target for the elapsed business days) — tick = where you should be now.";
 }
 
-// per-channel breakdown for the Marketing card — leads, qualified, spend, $/lead, $/qualified
+// per-channel scorecard for the Marketing card (Joe 8/25/26): leads → qualified → contracts →
+// closed → closed $ → ROAS from closings, and every count clicks through to the records behind it.
+let CH_DRILL=null; // {c:channel, st:stage}
+const SF_BASE="https://easystreetbuyers.my.salesforce.com/";
+function chEv(stage,W,c){return (DATA.deptEvents||[]).filter(e=>e.stage===stage&&e.dt>=W.from&&e.dt<=W.to&&e.channel===c)}
+function chCell(n,c,st){return n>0?'<button class="chdrill'+(CH_DRILL&&CH_DRILL.c===c&&CH_DRILL.st===st?' on':'')+'" data-chc="'+c+'" data-chst="'+st+'">'+fmt(n)+'</button>':'<span class="muted">0</span>'}
+function roasCell(closedAmt,sp,contracts){
+ if(sp<=0)return '<span class="muted">no spend</span>';
+ if(closedAmt<=0)return '<span class="roas '+(contracts>0?'wait':'poor')+'">0x'+(contracts>0?' · '+contracts+' pending':'')+'</span>';
+ const r=closedAmt/sp;return '<span class="roas '+(r>=1?'good':'poor')+'">'+r.toFixed(1)+'x</span>'}
 function channelTable(W){
  const evs=(DATA.deptEvents||[]).filter(e=>e.dt>=W.from&&e.dt<=W.to);
  const chs=new Set(evs.map(e=>e.channel).filter(Boolean));
  (DATA.spend||[]).forEach(r=>{if(spendWindow(W.from,W.to,r.channel)>0)chs.add(r.channel)});
  if(!chs.size)return'<div class="muted">no channel activity in this window</div>';
  const rows=[...chs].map(c=>{
-  const gross=evCount("gross",W.from,W.to,c),net=evCount("net",W.from,W.to,c),sp=spendWindow(W.from,W.to,c);
-  const pg=W.prior?evCount("gross",W.prior.from,W.prior.to,c):null;
-  return{c,gross,net,sp,pg}}).filter(r=>r.gross>0||r.net>0||r.sp>0)
-  .sort((a,b)=>b.gross-a.gross||b.sp-a.sp);
- const tg=rows.reduce((a,r)=>a+r.gross,0),tn=rows.reduce((a,r)=>a+r.net,0),ts=rows.reduce((a,r)=>a+r.sp,0);
- let t='<table><tr><th>Channel</th><th>Leads</th><th>Qualified</th><th>Spend</th><th>$/Lead</th><th>$/Qualified</th></tr>';
+  const gross=chEv("gross",W,c).length,net=chEv("net",W,c).length,con=chEv("contract",W,c).length,
+   cl=chEv("closed",W,c),closed=cl.length,camt=cl.reduce((a,e)=>a+Number(e.amount||0),0),sp=spendWindow(W.from,W.to,c);
+  const pg=W.prior?chEv("gross",W.prior,c).length:null;
+  return{c,gross,net,con,closed,camt,sp,pg}}).filter(r=>r.gross>0||r.net>0||r.sp>0||r.con>0||r.closed>0)
+  .sort((a,b)=>b.camt-a.camt||b.gross-a.gross||b.sp-a.sp);
+ const T=rows.reduce((a,r)=>{for(const k of["gross","net","con","closed","camt","sp"])a[k]+=r[k];return a},{gross:0,net:0,con:0,closed:0,camt:0,sp:0});
+ let t='<table class="tbl chtbl"><tr><th>Channel</th><th>Leads</th><th>Qualified</th><th>Contracts</th><th>Closed</th><th>Closed $</th><th>Spend</th><th>$/Lead</th><th>ROAS</th></tr>';
  rows.forEach(r=>{
-  t+="<tr><td>"+r.c+(W.prior?" "+chipFor(r.gross,r.pg,"up"):"")+"</td><td>"+fmt(r.gross)+"</td><td>"+fmt(r.net)+"</td>"
-   +"<td>"+(r.sp>0?money(r.sp):"—")+"</td>"
-   +"<td>"+(r.sp>0&&r.gross>0?money(r.sp/r.gross):"—")+"</td>"
-   +"<td>"+(r.sp>0&&r.net>0?money(r.sp/r.net):"—")+"</td></tr>"});
- t+='<tr style="font-weight:700"><td>Total</td><td>'+fmt(tg)+"</td><td>"+fmt(tn)+"</td><td>"+(ts>0?money(ts):"—")
-  +"</td><td>"+(ts>0&&tg>0?money(ts/tg):"—")+"</td><td>"+(ts>0&&tn>0?money(ts/tn):"—")+"</td></tr></table>";
+  t+="<tr><td>"+r.c+(W.prior?" "+chipFor(r.gross,r.pg,"up"):"")+"</td><td>"+chCell(r.gross,r.c,"gross")+"</td><td>"+chCell(r.net,r.c,"net")+"</td>"
+   +"<td>"+chCell(r.con,r.c,"contract")+"</td><td>"+chCell(r.closed,r.c,"closed")+"</td>"
+   +"<td>"+(r.camt>0?money(r.camt):'<span class="muted">—</span>')+"</td>"
+   +"<td>"+(r.sp>0?money(r.sp):'<span class="muted">—</span>')+"</td>"
+   +"<td>"+(r.sp>0&&r.gross>0?money(r.sp/r.gross):'<span class="muted">—</span>')+"</td>"
+   +"<td>"+roasCell(r.camt,r.sp,r.con)+"</td></tr>"});
+ t+='<tr style="font-weight:700"><td>Total</td><td>'+fmt(T.gross)+"</td><td>"+fmt(T.net)+"</td><td>"+fmt(T.con)+"</td><td>"+fmt(T.closed)+"</td><td>"+(T.camt>0?money(T.camt):"—")+"</td><td>"+(T.sp>0?money(T.sp):"—")
+  +"</td><td>"+(T.sp>0&&T.gross>0?money(T.sp/T.gross):"—")+"</td><td>"+(T.sp>0&&T.camt>0?(T.camt/T.sp).toFixed(1)+"x":"—")+"</td></tr></table>";
+ t+='<div class="muted" style="margin-top:4px">ROAS = closed $ ÷ spend in this window (closings lag spend by months — judge ROAS on Month/Last Month or longer). Click any count to see the records. Spend is only what is captured (Google PPC is not).</div>';
+ if(CH_DRILL)t+=chDrill(W);
  return t;
 }
+function chDrill(W){
+ const {c,st}=CH_DRILL;const dfmt=d=>d.slice(5).replace("-","/");
+ const rows=chEv(st,W,c).sort((a,b)=>a.dt<b.dt?1:-1);
+ const NAMES={gross:"leads",net:"qualified leads",contract:"contracts",closed:"closings"};
+ // status of each lead within the same channel: did it get qualified / attended / to contract later?
+ const later=(ref)=>{const st2=(DATA.deptEvents||[]).filter(e=>e.ref===ref&&e.channel===c).map(e=>e.stage);
+  if(st2.includes("closed"))return"closed";if(st2.includes("contract"))return"contract";if(st2.includes("appt_attended"))return"attended";if(st2.includes("appt_set"))return"appt set";if(st2.includes("net"))return"qualified";return"—"};
+ let h='<div class="chdrillhead"><b>'+c+' · '+rows.length+' '+(NAMES[st]||st)+'</b> · '+dfmt(W.from)+'–'+dfmt(W.to)+' <button class="chdrill on" data-chc="'+c+'" data-chst="'+st+'">close ×</button></div>';
+ if(!rows.length)return h+'<div class="muted">nothing in this window</div>';
+ h+='<table class="tbl"><tr><th>Date</th><th>'+(st==="gross"||st==="net"?"Lead":"Deal")+'</th>'+(st==="gross"||st==="net"?'<th>Got to</th>':'<th>Net $</th>')+'<th>Owner</th><th></th></tr>';
+ rows.forEach(r=>{h+='<tr><td>'+dfmt(r.dt)+'</td><td>'+((r.label||"?")+"").trim()+'</td><td>'+(st==="gross"||st==="net"?later(r.ref):(r.amount?money(Number(r.amount)):"—"))+'</td><td class="muted">'+(r.owner||"—")+'</td><td>'+(r.ref&&/^[a-zA-Z0-9]{15,18}$/.test(r.ref)?'<a href="'+SF_BASE+r.ref+'" target="_blank" rel="noopener">open in SF ↗</a>':'')+'</td></tr>'});
+ return h+'</table>';
+}
+document.getElementById("deptExtra").addEventListener("click",e=>{
+ const b=e.target.closest("[data-chc]");if(!b)return;
+ const c=b.dataset.chc,st=b.dataset.chst;
+ CH_DRILL=(CH_DRILL&&CH_DRILL.c===c&&CH_DRILL.st===st)?null:{c,st};renderDepts()});
 
 document.getElementById("deptPick").addEventListener("click",e=>{
  if(!e.target.dataset.d)return;
