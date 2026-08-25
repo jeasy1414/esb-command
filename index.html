@@ -81,7 +81,7 @@ canvas{max-height:220px}
 .roas.good{color:#4ade80;font-weight:700}.roas.poor{color:#f87171;font-weight:700}.roas.wait{color:#fbbf24}
 .chtbl td,.chtbl th{white-space:nowrap}
 #deptExtra a{color:#7aa2ff}
-.paytitle{font-weight:700;margin:6px 0 4px}.paysep{border:0;border-top:1px solid rgba(255,255,255,.12);margin:14px 0}.roas.free{color:#9ca3af}.paytbl td,.paytbl th{white-space:nowrap}
+.paytitle{font-weight:700;margin:6px 0 4px}.wsok{color:#4ade80;font-weight:600}.wsbad{color:#f87171;font-weight:600}.wstbl td,.wstbl th{white-space:nowrap}.wstbl td.wswin{white-space:normal;max-width:260px;font-size:.85em}.paysep{border:0;border-top:1px solid rgba(255,255,255,.12);margin:14px 0}.roas.free{color:#9ca3af}.paytbl td,.paytbl th{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -520,6 +520,40 @@ function roasCell(closedAmt,sp,contracts){
  if(sp<=0)return '<span class="muted">no spend</span>';
  if(closedAmt<=0)return '<span class="roas '+(contracts>0?'wait':'poor')+'">0x'+(contracts>0?' · '+contracts+' pending':'')+'</span>';
  const r=closedAmt/sp;return '<span class="roas '+(r>=1?'good':'poor')+'">'+r.toFixed(1)+'x</span>'}
+// WEEKLY MARKETING SCORECARD (Joe 8/25/26, the Marketing L10 spec): per lead source — owner, win
+// condition, leads vs expected, spend vs expected, $/lead, $/qualified, appts, contracts, closed —
+// for This Week / Last Week. Expectations come from Asana (New L10 → M-Marketing, set Thursday).
+function weekScorecard(W){
+ if(!(DWIN==="wtd"||DWIN==="lastwk"))return"";
+ const wk=W.from; // dept week windows start on Monday
+ const exp={};(DATA.expectations||[]).forEach(e=>{if(e.week_start===wk)exp[e.channel]=e});
+ const srcs=["Property Leads","PPC","Website","Direct Mail","REI Print","Facebook Ads"];
+ const extra=new Set((DATA.deptEvents||[]).filter(e=>(e.stage==="gross"||e.stage==="contract"||e.stage==="closed")&&e.dt>=W.from&&e.dt<=W.to).map(e=>e.channel));
+ ["Motivated Sellers","TV","Probate/LP","Eviction","Other"].forEach(c=>{if(extra.has(c))srcs.push(c)});
+ const dfmt=d=>d.slice(5).replace("-","/");
+ // appts/contracts/closed attributed to a source = events whose ref traces to a lead of that source in the trailing window
+ const leadsOf=c=>new Set((DATA.deptEvents||[]).filter(e=>e.stage==="gross"&&e.channel===c).map(e=>e.ref));
+ const cmp=(act,expv,good)=>{if(expv===null||expv===undefined)return'<span class="muted">—</span>';const ok=good==="up"?act>=expv:act<=expv;return'<span class="'+(ok?'wsok':'wsbad')+'">'+ (good==="up"?fmt(act):money(act))+' <span class="muted">/ '+(good==="up"?fmt(expv):money(expv))+'</span></span>'};
+ let t='<div class="paytitle">Weekly marketing scorecard <span class="muted">— '+(DWIN==="wtd"?"this week":"last week")+' · '+dfmt(W.from)+'–'+dfmt(W.to)+' · actual / expected</span></div>';
+ t+='<table class="tbl wstbl"><tr><th>Source</th><th>Owner</th><th>Leads</th><th>Spend</th><th>$/Lead</th><th>Qualified</th><th>$/Qualified</th><th>Appts</th><th>Contracts</th><th>Closed</th><th>Win condition</th></tr>';
+ let any=false;
+ srcs.forEach(c=>{
+  const g=chEv("gross",W,c).length,n=chEv("net",W,c).length,con=chEv("contract",W,c).length,cl=chEv("closed",W,c).length,sp=spendWindow(W.from,W.to,c);
+  const ap=(DATA.apptsSet||[]).filter(a=>a.set_dt>=W.from&&a.set_dt<=W.to&&a.channel===c).length;
+  const e=exp[c]||{};
+  if(!(g||sp||con||cl||ap||e.expected_leads!=null||e.expected_spend!=null))return;any=true;
+  t+='<tr><td>'+c+'</td><td class="muted">'+(e.owner||"—")+'</td>'
+   +'<td>'+(e.expected_leads!=null?cmp(g,Number(e.expected_leads),"up"):chCell(g,c,"gross"))+'</td>'
+   +'<td>'+(e.expected_spend!=null?cmp(sp,Number(e.expected_spend),"down"):(sp>0?money(sp):'<span class="muted">—</span>'))+'</td>'
+   +'<td>'+(sp>0&&g>0?money(sp/g):'<span class="muted">—</span>')+'</td>'
+   +'<td>'+chCell(n,c,"net")+'</td><td>'+(sp>0&&n>0?money(sp/n):'<span class="muted">—</span>')+'</td>'
+   +'<td>'+fmt(ap)+'</td><td>'+chCell(con,c,"contract")+'</td><td>'+chCell(cl,c,"closed")+'</td>'
+   +'<td class="wswin">'+(e.win_condition?e.win_condition:'<span class="muted">not set</span>')+'</td></tr>'});
+ if(!any)t+='<tr><td colspan="11" class="muted">no activity or expectations for this week</td></tr>';
+ const anyExp=Object.keys(exp).length>0;
+ t+='</table><div class="muted" style="margin-top:4px">'+(anyExp?'Expected numbers were set in Asana (New L10 → M-Marketing) for the week of '+dfmt(wk)+'. ':'<b>No expectations set for this week</b> — set them in the Thursday Marketing L10 (Asana → New L10 → M-Marketing → "Expectations · &lt;source&gt; · wk of …"). ')+'Green = met (leads at/above, spend at/below). Appts = seller appts set this week from this source. Google PPC spend not captured.</div><hr class="paysep">';
+ return t;
+}
 // "Is each channel paying?" (Joe 8/25/26): YEAR-TO-DATE per channel — spent, closed $ (SF Actual_Profit),
 // pending $ (SF Forecast_Profit on contracts still open), and a plain verdict. Closings lag spend by
 // months, so this is judged on the year, never on the dept window.
@@ -566,7 +600,7 @@ function channelTable(W){
   return{c,gross,net,con,closed,camt,sp,pg}}).filter(r=>r.gross>0||r.net>0||r.sp>0||r.con>0||r.closed>0)
   .sort((a,b)=>b.camt-a.camt||b.gross-a.gross||b.sp-a.sp);
  const T=rows.reduce((a,r)=>{for(const k of["gross","net","con","closed","camt","sp"])a[k]+=r[k];return a},{gross:0,net:0,con:0,closed:0,camt:0,sp:0});
- let t=payingTable();t+='<table class="tbl chtbl"><tr><th>Channel</th><th>Leads</th><th>Qualified</th><th>Contracts</th><th>Closed</th><th>Closed $</th><th>Spend</th><th>$/Lead</th><th>ROAS</th></tr>';
+ let t=weekScorecard(W)+payingTable();t+='<table class="tbl chtbl"><tr><th>Channel</th><th>Leads</th><th>Qualified</th><th>Contracts</th><th>Closed</th><th>Closed $</th><th>Spend</th><th>$/Lead</th><th>ROAS</th></tr>';
  rows.forEach(r=>{
   t+="<tr><td>"+r.c+(W.prior?" "+chipFor(r.gross,r.pg,"up"):"")+"</td><td>"+chCell(r.gross,r.c,"gross")+"</td><td>"+chCell(r.net,r.c,"net")+"</td>"
    +"<td>"+chCell(r.con,r.c,"contract")+"</td><td>"+chCell(r.closed,r.c,"closed")+"</td>"
