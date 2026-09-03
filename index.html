@@ -81,7 +81,7 @@ canvas{max-height:220px}
 .roas.good{color:#4ade80;font-weight:700}.roas.poor{color:#f87171;font-weight:700}.roas.wait{color:#fbbf24}
 .chtbl td,.chtbl th{white-space:nowrap}
 #deptExtra a{color:#7aa2ff}
-.paytitle{font-weight:700;margin:6px 0 4px}.wsok{color:#4ade80;font-weight:600}.wsbad{color:#f87171;font-weight:600}.wstbl td,.wstbl th{white-space:nowrap}.wstbl td.wswin{white-space:normal;max-width:260px;font-size:.85em}.paysep{border:0;border-top:1px solid rgba(255,255,255,.12);margin:14px 0}.roas.free{color:#9ca3af}.paytbl td,.paytbl th{white-space:nowrap}
+.cmt{margin:2px 0 4px}.cmtnote{font-size:.85em;margin:2px 0 8px;max-width:70ch}.cmttbl td,.cmttbl th{white-space:nowrap;vertical-align:middle}.cmttbl td.est,.cmttbl th.est{color:#9ca3af;font-weight:400}.cmtin{width:86px;padding:4px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:inherit;font:inherit;text-align:right}.cmtin:focus{outline:2px solid #60a5fa;outline-offset:0}.cmtin[readonly]{border-color:transparent;background:transparent;color:#9ca3af}.cmttot td{border-top:1px solid rgba(255,255,255,.18)}.cmtbar{display:flex;align-items:center;gap:10px;margin:10px 0 2px;flex-wrap:wrap}.cmtbtn{padding:7px 14px;border-radius:7px;border:0;background:#2563eb;color:#fff;font:inherit;font-weight:600;cursor:pointer}.cmtbtn:hover{background:#1d4ed8}.cmtbtn.ghost{background:transparent;border:1px solid rgba(255,255,255,.28);color:inherit;font-weight:500}.cmtbtn:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}.cmtok{color:#4ade80;font-weight:700}.cmtq{display:inline-block;width:15px;height:15px;line-height:15px;text-align:center;border-radius:50%;background:rgba(255,255,255,.14);color:#9ca3af;font-size:.72em;cursor:help}.paytitle{font-weight:700;margin:6px 0 4px}.wsok{color:#4ade80;font-weight:600}.wsbad{color:#f87171;font-weight:600}.wstbl td,.wstbl th{white-space:nowrap}.wstbl td.wswin{white-space:normal;max-width:260px;font-size:.85em}.paysep{border:0;border-top:1px solid rgba(255,255,255,.12);margin:14px 0}.roas.free{color:#9ca3af}.paytbl td,.paytbl th{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -201,7 +201,7 @@ function preset(p){const now=new Date();const t=iso(now);let f;
 const LBL={today:"Today",wtd:"This week",mtd:"This month",30:"Last 30 days",qtd:"This quarter",ytd:"Year to date"};
 
 async function load(){
- const ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2anhncnF0cXhzeGlwcWVpaGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDE0MDAsImV4cCI6MjA5MTc3NzQwMH0.JSeDKLenj0trpZGl38EPUEDWRpGmmIc6cORfVBipbAk"; // public anon key — auth is the password, checked server-side
+ const ANON=document.body.dataset.anon="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2anhncnF0cXhzeGlwcWVpaGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDE0MDAsImV4cCI6MjA5MTc3NzQwMH0.JSeDKLenj0trpZGl38EPUEDWRpGmmIc6cORfVBipbAk"; // public anon key — auth is the password, checked server-side
  const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/data",{method:"POST",headers:{"Content-Type":"application/json","apikey":ANON,"Authorization":"Bearer "+ANON},body:JSON.stringify({password:PW,from:RANGE.from,to:RANGE.to})});
  if(r.status===401){localStorage.removeItem("esbpw");sessionStorage.removeItem("esbpw");document.getElementById("login").style.display="flex";document.getElementById("loginerr").textContent="Wrong password";return}
  DATA=await r.json();
@@ -593,6 +593,98 @@ function payingTable(){
  t+='</table><div class="muted" style="margin-top:4px">Closed $ = Actual Profit in Salesforce once the sale is booked. Pending $ = Forecast Profit on contracts still open (a deal that dies drops out). Spent = what is captured — Google PPC is not, so PPC reads better than it is. Verdict: closed ≥ spent = paying; closed + pending ≥ spent = likely.</div>';
  return t+'<hr class="paysep">';
 }
+// ── Weekly commitment (Joe 9/3/26) ─────────────────────────────────────────
+// The number the TEAM commits to for a week, typed by a person and locked with
+// Approve. Claude's estimate rides alongside as a labelled reference and is never
+// copied into the commitment fields. Window is the row's own week_start..week_end
+// (Joe runs Sun–Sat), which is independent of the Mon–Sun dept windows above.
+let COMMIT_DIRTY = false;
+function commitRows(){
+ const rows=(DATA.commitments||[]);
+ if(!rows.length)return null;
+ const wk=rows.map(r=>r.week_start).sort().slice(-1)[0];
+ return rows.filter(r=>r.week_start===wk).sort((a,b)=>Number(b.suggested_spend||0)-Number(a.suggested_spend||0));
+}
+function commitCard(){
+ const rows=commitRows(); if(!rows)return"";
+ const wk=rows[0].week_start, we=rows[0].week_end;
+ const approved=rows.some(r=>r.status==="approved");
+ const W={from:wk,to:we};
+ const dshort=d=>{const [y,m,dd]=d.split("-");return m.replace(/^0/,"")+"/"+dd.replace(/^0/,"")};
+ const started=dIso(new Date())>=wk;
+ let t='<div class="cmt">';
+ t+='<div class="paytitle">Weekly commitment <span class="muted">— '+dshort(wk)+' to '+dshort(we)+(approved?'':' · not committed yet')+'</span></div>';
+ t+='<div class="muted cmtnote">'+(approved
+   ? 'Locked. Actuals below are measured over these exact dates. Use Edit to change a number and approve again.'
+   : 'Type what you are committing to, then Approve. The estimate column is a reference only — nothing has been filled in for you.')+'</div>';
+ t+='<table class="tbl cmttbl"><tr><th>Channel</th><th class="est">Estimate</th><th>Commit spend</th><th>Commit leads</th>'
+   +(approved?'<th>Actual spend</th><th>Actual leads</th>':'')+'</tr>';
+ let cs=0,cl=0,as=0,al=0,est=0;
+ rows.forEach(r=>{
+  const ch=r.channel;
+  const aSp=spendWindow(wk,we,ch), aLd=chEv("gross",W,ch).length;
+  const vSp=r.committed_spend==null?"":String(Number(r.committed_spend));
+  const vLd=r.committed_leads==null?"":String(r.committed_leads);
+  cs+=Number(r.committed_spend||0); cl+=Number(r.committed_leads||0); as+=aSp; al+=aLd; est+=Number(r.suggested_spend||0);
+  const ro=approved?" readonly":"";
+  t+='<tr><td>'+ch+(r.suggested_basis?' <span class="cmtq" title="'+String(r.suggested_basis).replace(/"/g,"&quot;")+'">?</span>':'')+'</td>'
+   +'<td class="est">'+money(r.suggested_spend||0)+' <span class="muted">· '+fmt(r.suggested_leads||0)+' leads</span></td>'
+   +'<td><input class="cmtin" id="cs_'+ch.replace(/\W/g,"")+'" inputmode="decimal" placeholder="$" value="'+vSp+'"'+ro+'></td>'
+   +'<td><input class="cmtin" id="cl_'+ch.replace(/\W/g,"")+'" inputmode="numeric" placeholder="#" value="'+vLd+'"'+ro+'></td>';
+  if(approved){
+   const okS=r.committed_spend!=null&&aSp<=Number(r.committed_spend);
+   const okL=r.committed_leads!=null&&aLd>=Number(r.committed_leads);
+   t+='<td class="'+(r.committed_spend==null?"":okS?"wsok":"wsbad")+'">'+(aSp>0?money(aSp):'<span class="muted">—</span>')+'</td>'
+     +'<td class="'+(r.committed_leads==null?"":okL?"wsok":"wsbad")+'">'+fmt(aLd)+'</td>';
+  }
+  t+='</tr>';
+ });
+ t+='<tr class="cmttot"><td><strong>Total</strong></td><td class="est">'+money(est)+'</td>'
+   +'<td><strong>'+(cs?money(cs):'<span class="muted">—</span>')+'</strong></td>'
+   +'<td><strong>'+(cl?fmt(cl):'<span class="muted">—</span>')+'</strong></td>'
+   +(approved?'<td><strong>'+money(as)+'</strong></td><td><strong>'+fmt(al)+'</strong></td>':'')+'</tr>';
+ t+='</table>';
+ const who=rows.find(r=>r.approved_by);
+ if(approved){
+  t+='<div class="cmtbar"><span class="cmtok">✓ Committed</span> <span class="muted">by '+(who&&who.approved_by?who.approved_by:"—")
+    +(who&&who.approved_at?" on "+who.approved_at.slice(0,10):"")+'</span>'
+    +'<button class="cmtbtn ghost" onclick="commitEdit()">Edit</button></div>';
+  if(!started)t+='<div class="muted cmtnote">The week has not started, so actuals read 0.</div>';
+ }else{
+  t+='<div class="cmtbar"><button class="cmtbtn" onclick="saveCommit(true)">Approve &amp; lock the week</button>'
+    +'<button class="cmtbtn ghost" onclick="saveCommit(false)">Save draft</button>'
+    +'<span class="muted" id="cmtmsg"></span></div>';
+ }
+ return t+'</div><hr class="paysep">';
+}
+function commitEdit(){
+ document.querySelectorAll(".cmtin").forEach(i=>i.removeAttribute("readonly"));
+ const b=document.querySelector(".cmtbar");
+ if(b)b.innerHTML='<button class="cmtbtn" onclick="saveCommit(true)">Approve the change</button><span class="muted" id="cmtmsg"></span>';
+}
+async function saveCommit(approve){
+ const rows=commitRows(); if(!rows)return;
+ const msg=document.getElementById("cmtmsg");
+ const key=c=>c.replace(/\W/g,"");
+ const payload=rows.map(r=>({channel:r.channel,
+   spend:(document.getElementById("cs_"+key(r.channel))||{}).value,
+   leads:(document.getElementById("cl_"+key(r.channel))||{}).value}));
+ if(approve&&payload.every(p=>String(p.spend).trim()===""&&String(p.leads).trim()==="")){
+  if(msg)msg.textContent="Nothing typed yet — enter at least one number first.";return;
+ }
+ if(msg)msg.textContent="Saving…";
+ try{
+  const ANON=document.body.dataset.anon;
+  const r=await fetch("https://uvjxgrqtqxsxipqeihgz.supabase.co/functions/v1/esb-dashboard/commit",
+   {method:"POST",headers:{"Content-Type":"application/json","apikey":ANON,"Authorization":"Bearer "+ANON},
+    body:JSON.stringify({password:PW,week_start:rows[0].week_start,rows:payload,approve:approve,by:"Joe"})});
+  const j=await r.json();
+  if(!r.ok||j.error){if(msg)msg.textContent="Save failed: "+(j.error||r.status);return}
+  COMMIT_DIRTY=false; if(msg)msg.textContent=approve?"Committed.":"Draft saved.";
+  await load();
+ }catch(e){if(msg)msg.textContent="Save failed: "+e}
+}
+
 function channelTable(W){
  const evs=(DATA.deptEvents||[]).filter(e=>e.dt>=W.from&&e.dt<=W.to);
  const chs=new Set(evs.map(e=>e.channel).filter(Boolean));
@@ -605,7 +697,7 @@ function channelTable(W){
   return{c,gross,net,con,closed,camt,sp,pg}}).filter(r=>r.gross>0||r.net>0||r.sp>0||r.con>0||r.closed>0)
   .sort((a,b)=>b.camt-a.camt||b.gross-a.gross||b.sp-a.sp);
  const T=rows.reduce((a,r)=>{for(const k of["gross","net","con","closed","camt","sp"])a[k]+=r[k];return a},{gross:0,net:0,con:0,closed:0,camt:0,sp:0});
- let t=weekScorecard(W)+payingTable();t+='<table class="tbl chtbl"><tr><th>Channel</th><th>Leads</th><th>Qualified</th><th>Contracts</th><th>Closed</th><th>Closed $</th><th>Spend</th><th>$/Lead</th><th>ROAS</th></tr>';
+ let t=commitCard()+weekScorecard(W)+payingTable();t+='<table class="tbl chtbl"><tr><th>Channel</th><th>Leads</th><th>Qualified</th><th>Contracts</th><th>Closed</th><th>Closed $</th><th>Spend</th><th>$/Lead</th><th>ROAS</th></tr>';
  rows.forEach(r=>{
   t+="<tr><td>"+r.c+(W.prior?" "+chipFor(r.gross,r.pg,"up"):"")+"</td><td>"+chCell(r.gross,r.c,"gross")+"</td><td>"+chCell(r.net,r.c,"net")+"</td>"
    +"<td>"+chCell(r.con,r.c,"contract")+"</td><td>"+chCell(r.closed,r.c,"closed")+"</td>"
@@ -650,7 +742,8 @@ document.getElementById("presets").addEventListener("click",e=>{
  if(!e.target.dataset.p)return;
  document.querySelectorAll("#presets .chip").forEach(c=>c.classList.remove("on"));
  e.target.classList.add("on");RANGE=preset(e.target.dataset.p);load()});
-setInterval(()=>{if(PW&&DATA)load()},300000);
+setInterval(()=>{if(PW&&DATA&&!COMMIT_DIRTY)load()},300000);
+document.addEventListener("input",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("cmtin"))COMMIT_DIRTY=true},true);
 if(PW)load();
 </script>
 </body></html>
