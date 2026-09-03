@@ -220,10 +220,13 @@ function counts(evts){const o={};STEPS.forEach(s=>o[s.key]=0);let rev=0;
 function dailyChannels(){return new Set((DATA.spendDaily||[]).map(r=>r.channel))}
 // channel|month keys that have exact daily rows — a monthly lump is skipped ONLY for those months, so Lob daily
 // letters (2026-05+) and the Direct One monthly drops (Feb/Mar) both count. (9/3/26 — was per channel, which hid one or the other)
-function dailyMonths(){return new Set((DATA.spendDaily||[]).map(r=>r.channel+"|"+r.dt.slice(0,7)))}
+// Once a channel is captured per day/drop in spendDaily, its monthly lumps from that first captured month ON are
+// superseded (they are the same money, or a forward-booked order that has not shipped — REI Print Aug/Sep). Months BEFORE
+// capture began (Direct One Feb/Mar) still count. Returns a test fn (channel, ym) → skip this monthly row?
+function dailyMonths(){const first={};(DATA.spendDaily||[]).forEach(r=>{const m=r.dt.slice(0,7);if(!first[r.channel]||m<first[r.channel])first[r.channel]=m});return (ch,ym)=>!!first[ch]&&ym>=first[ch]}
 function dailySpend(from,to,ch){return (DATA.spendDaily||[]).filter(r=>r.dt>=from&&r.dt<=to&&(!ch||r.channel===ch)).reduce((a,r)=>a+Number(r.amount||0),0)}
 function spendIn(fn){const daily=dailyMonths();
- const m=(DATA.spend||[]).filter(s=>!daily.has(s.channel+"|"+s.ym)&&s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)&&fn(s)).reduce((a,s)=>a+Number(s.spend||0),0);
+ const m=(DATA.spend||[]).filter(s=>!daily(s.channel,s.ym)&&s.ym>=RANGE.from.slice(0,7)&&s.ym<=RANGE.to.slice(0,7)&&fn(s)).reduce((a,s)=>a+Number(s.spend||0),0);
  const d=(DATA.spendDaily||[]).filter(r=>r.dt>=RANGE.from&&r.dt<=RANGE.to&&fn({ym:r.dt.slice(0,7),channel:r.channel,spend:r.amount})).reduce((a,r)=>a+Number(r.amount||0),0);
  return m+d}
 
@@ -410,7 +413,7 @@ function cbaTable(W){
 function spendWindow(from,to,ch){ // exact daily rows where captured (PPL); else monthly pro-rated across business days
  const daily=dailyMonths();
  let s=dailySpend(from,to,ch||null);
- const by={};(DATA.spend||[]).forEach(r=>{if(ch&&r.channel!==ch)return;if(daily.has(r.channel+"|"+r.ym))return;by[r.ym]=(by[r.ym]||0)+Number(r.spend||0)});
+ const by={};(DATA.spend||[]).forEach(r=>{if(ch&&r.channel!==ch)return;if(daily(r.channel,r.ym))return;by[r.ym]=(by[r.ym]||0)+Number(r.spend||0)});
  for(const ym in by){const mFirst=ym+"-01";const mLast=ym+"-"+String(new Date(+ym.slice(0,4),+ym.slice(5,7),0).getDate()).padStart(2,"0");
   const f=from>mFirst?from:mFirst, t=to<mLast?to:mLast;
   if(f<=t)s+=by[ym]*bizBetween(f,t)/Math.max(bizInMonth(mFirst),1)}
@@ -572,7 +575,7 @@ function payingTable(){
    if(open.has(d.ref)&&!closedRefs.has(d.ref)){r.pendN++;const a=Number(d.amount||0);if(a>0)r.pend+=a;else r.pendUnk++}}});
  // spend YTD per channel (exact daily rows where captured, else monthly)
  const daily=dailyMonths();
- (DATA.spend||[]).forEach(s=>{if(daily.has(s.channel+"|"+s.ym))return;if(s.ym>=y0.slice(0,7)&&s.ym<=today.slice(0,7))row(s.channel).spend+=Number(s.spend||0)});
+ (DATA.spend||[]).forEach(s=>{if(daily(s.channel,s.ym))return;if(s.ym>=y0.slice(0,7)&&s.ym<=today.slice(0,7))row(s.channel).spend+=Number(s.spend||0)});
  (DATA.spendDaily||[]).forEach(r=>{if(r.dt>=y0&&r.dt<=today)row(r.channel).spend+=Number(r.amount||0)});
  const list=Object.values(rows).filter(r=>r.spend>0||r.closed>0||r.pend>0).sort((a,b)=>(b.closed-b.spend)-(a.closed-a.spend));
  const verdict=r=>{
