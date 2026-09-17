@@ -593,57 +593,81 @@ function payingTable(){
  t+='</table><div class="muted" style="margin-top:4px">Closed $ = Actual Profit in Salesforce once the sale is booked. Pending $ = Forecast Profit on contracts still open (a deal that dies drops out). Spent = what is captured — Google PPC is not, so PPC reads better than it is. Verdict: closed ≥ spent = paying; closed + pending ≥ spent = likely.</div>';
  return t+'<hr class="paysep">';
 }
-// ── Weekly commitment (Joe 9/3/26) ─────────────────────────────────────────
+// ── Weekly commitment (Joe 9/3/26; reworked 9/17/26 "this is extremely confusing") ──
 // The number the TEAM commits to for a week, typed by a person and locked with
 // Approve. Claude's estimate rides alongside as a labelled reference and is never
 // copied into the commitment fields. Window is the row's own week_start..week_end
 // (Joe runs Sun–Sat), which is independent of the Mon–Sun dept windows above.
+// 9/17: (1) the card is always the NEWEST week in the table = the one being planned;
+// (2) plain wording; (3) rows with cadence='monthly' are ONE-DROP mail (Direct One
+// $500/mo, REI Print) — Joe: "there's no weekly spend, it's just one drop" — shown in
+// their own block, measured over the calendar month, never pro-rated into the week;
+// (4) the most recent EARLIER committed week is reviewed underneath: said vs happened.
 let COMMIT_DIRTY = false;
-function commitRows(){
- const rows=(DATA.commitments||[]);
- if(!rows.length)return null;
- const wk=rows.map(r=>r.week_start).sort().slice(-1)[0];
+const CMT_LABEL={"Direct Mail":"Lob letters (daily mail)","Direct One":"Direct One postcards","REI Print":"REI Print letters"};
+function cmtLabel(ch){return CMT_LABEL[ch]||ch}
+const dshort=d=>{const [y,m,dd]=d.split("-");return m.replace(/^0/,"")+"/"+dd.replace(/^0/,"")};
+function cmtWeeks(){return [...new Set((DATA.commitments||[]).map(r=>r.week_start))].sort().reverse()}
+function commitRows(){ // the week being planned = the newest week in the table (weekly + monthly rows)
+ const rows=(DATA.commitments||[]); if(!rows.length)return null;
+ const wk=cmtWeeks()[0];
  return rows.filter(r=>r.week_start===wk).sort((a,b)=>Number(b.suggested_spend||0)-Number(a.suggested_spend||0));
+}
+function cmtMonth(wk){const [y,m]=wk.split("-");const last=new Date(Number(y),Number(m),0).getDate();
+ return{from:y+"-"+m+"-01",to:y+"-"+m+"-"+String(last).padStart(2,"0"),name:new Date(Number(y),Number(m)-1,1).toLocaleString("en-US",{month:"long"})}}
+function cmtActual(r){ // actual spend + leads over the row's own window: the week, or the calendar month for a one-drop row
+ const W=r.cadence==="monthly"?cmtMonth(r.week_start):{from:r.week_start,to:r.week_end};
+ if(r.channel==="Direct One")return{sp:null,ld:null,W}; // responses ring the DM tracking lines (counted under Direct Mail); the order is not auto-booked
+ return{sp:spendWindow(W.from,W.to,r.channel),ld:chEv("gross",W,r.channel).length,W};
+}
+function cmtTable(rows,approved,kind){
+ let t='<table class="tbl cmttbl"><tr><th>Channel</th><th class="est">Claude\'s estimate</th><th>Your spend</th><th>Your leads</th>'+(approved?'<th>Actual spend</th><th>Actual leads</th>':'')+'</tr>';
+ let cs=0,cl=0,as=0,al=0,est=0;
+ rows.forEach(r=>{
+  const ch=r.channel, A=cmtActual(r);
+  const vSp=r.committed_spend==null?"":String(Number(r.committed_spend));
+  const vLd=r.committed_leads==null?"":String(r.committed_leads);
+  cs+=Number(r.committed_spend||0); cl+=Number(r.committed_leads||0); as+=Number(A.sp||0); al+=Number(A.ld||0); est+=Number(r.suggested_spend||0);
+  const ro=approved?" readonly":"";
+  t+='<tr><td>'+cmtLabel(ch)+(r.suggested_basis?' <span class="cmtq" title="'+String(r.suggested_basis).replace(/"/g,"&quot;")+'">?</span>':'')+'</td>'
+   +'<td class="est">'+money(r.suggested_spend||0)+' <span class="muted">· '+fmt(r.suggested_leads||0)+' leads</span></td>'
+   +'<td><input class="cmtin" id="cs_'+ch.replace(/\W/g,"")+'" inputmode="decimal" placeholder="$" value="'+vSp+'"'+ro+'></td>'
+   +'<td><input class="cmtin" id="cl_'+ch.replace(/\W/g,"")+'" inputmode="numeric" placeholder="#" value="'+vLd+'"'+ro+'></td>';
+  if(approved){
+   if(A.sp==null)t+='<td colspan="2" class="muted">responses count under Direct Mail; the order is booked when it drops</td>';
+   else{
+    const okS=r.committed_spend!=null&&A.sp<=Number(r.committed_spend);
+    const okL=r.committed_leads!=null&&A.ld>=Number(r.committed_leads);
+    t+='<td class="'+(r.committed_spend==null?"":okS?"wsok":"wsbad")+'">'+(A.sp>0?money(A.sp):'<span class="muted">—</span>')+'</td>'
+      +'<td class="'+(r.committed_leads==null?"":okL?"wsok":"wsbad")+'">'+fmt(A.ld)+'</td>';
+   }
+  }
+  t+='</tr>';
+ });
+ if(kind==="weekly")t+='<tr class="cmttot"><td><strong>Week total</strong></td><td class="est">'+money(est)+'</td>'
+   +'<td><strong>'+(cs?money(cs):'<span class="muted">—</span>')+'</strong></td>'
+   +'<td><strong>'+(cl?fmt(cl):'<span class="muted">—</span>')+'</strong></td>'
+   +(approved?'<td><strong>'+money(as)+'</strong></td><td><strong>'+fmt(al)+'</strong></td>':'')+'</tr>';
+ return t+'</table>';
 }
 function commitCard(){
  const rows=commitRows(); if(!rows)return"";
  const wk=rows[0].week_start, we=rows[0].week_end;
  const approved=rows.some(r=>r.status==="approved");
- const W={from:wk,to:we};
- const dshort=d=>{const [y,m,dd]=d.split("-");return m.replace(/^0/,"")+"/"+dd.replace(/^0/,"")};
- const started=dIso(new Date())>=wk;
+ const today=dIso(new Date());
+ const started=today>=wk, ended=today>we;
+ const weekly=rows.filter(r=>r.cadence!=="monthly"), monthly=rows.filter(r=>r.cadence==="monthly");
+ const when=ended?"week of":started?"this week,":"next week,";
  let t='<div class="cmt">';
- t+='<div class="paytitle">Weekly commitment <span class="muted">— '+dshort(wk)+' to '+dshort(we)+(approved?'':' · not committed yet')+'</span></div>';
+ t+='<div class="paytitle">Marketing plan <span class="muted">— '+when+' Sun '+dshort(wk)+' to Sat '+dshort(we)+(approved?' · committed':' · not committed yet')+'</span></div>';
  t+='<div class="muted cmtnote">'+(approved
-   ? 'Locked. Actuals below are measured over these exact dates. Use Edit to change a number and approve again.'
-   : 'Type what you are committing to, then Approve. The estimate column is a reference only — nothing has been filled in for you.')+'</div>';
- t+='<table class="tbl cmttbl"><tr><th>Channel</th><th class="est">Estimate</th><th>Commit spend</th><th>Commit leads</th>'
-   +(approved?'<th>Actual spend</th><th>Actual leads</th>':'')+'</tr>';
- let cs=0,cl=0,as=0,al=0,est=0;
- rows.forEach(r=>{
-  const ch=r.channel;
-  const aSp=spendWindow(wk,we,ch), aLd=chEv("gross",W,ch).length;
-  const vSp=r.committed_spend==null?"":String(Number(r.committed_spend));
-  const vLd=r.committed_leads==null?"":String(r.committed_leads);
-  cs+=Number(r.committed_spend||0); cl+=Number(r.committed_leads||0); as+=aSp; al+=aLd; est+=Number(r.suggested_spend||0);
-  const ro=approved?" readonly":"";
-  t+='<tr><td>'+ch+(r.suggested_basis?' <span class="cmtq" title="'+String(r.suggested_basis).replace(/"/g,"&quot;")+'">?</span>':'')+'</td>'
-   +'<td class="est">'+money(r.suggested_spend||0)+' <span class="muted">· '+fmt(r.suggested_leads||0)+' leads</span></td>'
-   +'<td><input class="cmtin" id="cs_'+ch.replace(/\W/g,"")+'" inputmode="decimal" placeholder="$" value="'+vSp+'"'+ro+'></td>'
-   +'<td><input class="cmtin" id="cl_'+ch.replace(/\W/g,"")+'" inputmode="numeric" placeholder="#" value="'+vLd+'"'+ro+'></td>';
-  if(approved){
-   const okS=r.committed_spend!=null&&aSp<=Number(r.committed_spend);
-   const okL=r.committed_leads!=null&&aLd>=Number(r.committed_leads);
-   t+='<td class="'+(r.committed_spend==null?"":okS?"wsok":"wsbad")+'">'+(aSp>0?money(aSp):'<span class="muted">—</span>')+'</td>'
-     +'<td class="'+(r.committed_leads==null?"":okL?"wsok":"wsbad")+'">'+fmt(aLd)+'</td>';
-  }
-  t+='</tr>';
- });
- t+='<tr class="cmttot"><td><strong>Total</strong></td><td class="est">'+money(est)+'</td>'
-   +'<td><strong>'+(cs?money(cs):'<span class="muted">—</span>')+'</strong></td>'
-   +'<td><strong>'+(cl?fmt(cl):'<span class="muted">—</span>')+'</strong></td>'
-   +(approved?'<td><strong>'+money(as)+'</strong></td><td><strong>'+fmt(al)+'</strong></td>':'')+'</tr>';
- t+='</table>';
+   ? 'Committed. Actual spend and leads fill in as the week runs: green when spend came in at or under your number and leads at or over it. Edit changes a number.'
+   : 'Type the spend and leads you expect from each channel, then Approve. The grey column is Claude\'s estimate, for reference only. Next Monday this card shows what actually came in next to what you committed.')+'</div>';
+ t+=cmtTable(weekly,approved,"weekly");
+ if(monthly.length){
+  t+='<div class="paytitle" style="margin-top:12px">One-drop mail — '+cmtMonth(wk).name+' <span class="muted">· one order a month, spend books on the drop date, not part of the weekly numbers</span></div>';
+  t+=cmtTable(monthly,approved,"monthly");
+ }
  const who=rows.find(r=>r.approved_by);
  if(approved){
   t+='<div class="cmtbar"><span class="cmtok">✓ Committed</span> <span class="muted">by '+(who&&who.approved_by?who.approved_by:"—")
@@ -651,11 +675,26 @@ function commitCard(){
     +'<button class="cmtbtn ghost" onclick="commitEdit()">Edit</button></div>';
   if(!started)t+='<div class="muted cmtnote">The week has not started, so actuals read 0.</div>';
  }else{
-  t+='<div class="cmtbar"><button class="cmtbtn" onclick="saveCommit(true)">Approve &amp; lock the week</button>'
+  t+='<div class="cmtbar"><button class="cmtbtn" onclick="saveCommit(true)">Approve — this is the plan</button>'
     +'<button class="cmtbtn ghost" onclick="saveCommit(false)">Save draft</button>'
     +'<span class="muted" id="cmtmsg"></span></div>';
  }
+ t+=commitReview(wk);
  return t+'</div><hr class="paysep">';
+}
+function commitReview(curWk){ // the most recent EARLIER committed week: what we said vs what happened
+ const rows=(DATA.commitments||[]);
+ const wk=cmtWeeks().filter(w=>w<curWk).find(w=>rows.some(r=>r.week_start===w&&r.status==="approved"));
+ if(!wk)return"";
+ const rs=rows.filter(r=>r.week_start===wk&&r.status==="approved"&&r.cadence!=="monthly");
+ if(!rs.length)return"";
+ let t='<div class="paytitle" style="margin-top:14px">Last committed week <span class="muted">— Sun '+dshort(wk)+' to Sat '+dshort(rs[0].week_end)+' · what we said vs what happened</span></div>';
+ t+='<table class="tbl cmttbl"><tr><th>Channel</th><th>Said spend</th><th>Actual</th><th>Said leads</th><th>Actual</th></tr>';
+ rs.forEach(r=>{const A=cmtActual(r);
+  const okS=r.committed_spend!=null&&A.sp<=Number(r.committed_spend), okL=r.committed_leads!=null&&A.ld>=Number(r.committed_leads);
+  t+='<tr><td>'+cmtLabel(r.channel)+'</td><td>'+(r.committed_spend==null?'<span class="muted">—</span>':money(r.committed_spend))+'</td><td class="'+(r.committed_spend==null?"":okS?"wsok":"wsbad")+'">'+(A.sp>0?money(A.sp):'<span class="muted">—</span>')+'</td>'
+   +'<td>'+(r.committed_leads==null?'<span class="muted">—</span>':fmt(r.committed_leads))+'</td><td class="'+(r.committed_leads==null?"":okL?"wsok":"wsbad")+'">'+fmt(A.ld)+'</td></tr>'});
+ return t+'</table>';
 }
 function commitEdit(){
  document.querySelectorAll(".cmtin").forEach(i=>i.removeAttribute("readonly"));
